@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RegisterWidget</class>
+ <widget class="QWidget" name="RegisterWidget">
+  <property name="windowTitle">
+   <string>注册</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <property name="spacing"><number>20</number></property>
+   <item>
+    <!-- 背景 QLabel，可插入图片 -->
+    <widget class="QLabel" name="backgroundLabel">
+     <property name="text"><string/></property>
+     <property name="scaledContents"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="formLayout">
+     <property name="spacing"><number>15</number></property>
+     <item>
+      <widget class="QLineEdit" name="regUser">
+       <property name="placeholderText"><string>账号</string></property>
+       <property name="styleSheet">
+        <string>
+         QLineEdit { border:2px solid #2980b9; border-radius:15px; padding:10px; background: rgba(255,255,255,0.9); font:16px "微软雅黑"; }
+         QLineEdit:focus { border:2px solid #3498db; }
+        </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="regPwd">
+       <property name="echoMode"><enum>QLineEdit::Password</enum></property>
+       <property name="placeholderText"><string>密码</string></property>
+       <property name="styleSheet">
+        <string>
+         QLineEdit { border:2px solid #2980b9; border-radius:15px; padding:10px; background: rgba(255,255,255,0.9); font:16px "微软雅黑"; }
+         QLineEdit:focus { border:2px solid #3498db; }
+        </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="regPwdConfirm">
+       <property name="echoMode"><enum>QLineEdit::Password</enum></property>
+       <property name="placeholderText"><string>再次确认密码</string></property>
+       <property name="styleSheet">
+        <string>
+         QLineEdit { border:2px solid #2980b9; border-radius:15px; padding:10px; background: rgba(255,255,255,0.9); font:16px "微软雅黑"; }
+         QLineEdit:focus { border:2px solid #3498db; }
+        </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="regEmail">
+       <property name="placeholderText"><string>邮箱</string></property>
+       <property name="styleSheet">
+        <string>
+         QLineEdit { border:2px solid #2980b9; border-radius:15px; padding:10px; background: rgba(255,255,255,0.9); font:16px "微软雅黑"; }
+         QLineEdit:focus { border:2px solid #3498db; }
+        </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="regPhone">
+       <property name="placeholderText"><string>电话</string></property>
+       <property name="styleSheet">
+        <string>
+         QLineEdit { border:2px solid #2980b9; border-radius:15px; padding:10px; background: rgba(255,255,255,0.9); font:16px "微软雅黑"; }
+         QLineEdit:focus { border:2px solid #3498db; }
+        </string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="buttonLayout">
+       <property name="spacing"><number>20</number></property>
+       <item>
+        <widget class="QPushButton" name="btnSubmit">
+         <property name="text"><string>提交注册</string></property>
+         <property name="styleSheet">
+          <string>
+           QPushButton {
+             background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3498db, stop:1 #2980b9);
+             border-radius: 20px; color:white; font:bold 18px "微软雅黑"; min-height:50px;
+           }
+           QPushButton:hover { background: #5dade2; }
+          </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnBackReg">
+         <property name="text"><string>返回登录</string></property>
+         <property name="styleSheet">
+          <string>
+           QPushButton {
+             background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #9b59b6, stop:1 #8e44ad);
+             border-radius: 20px; color:white; font:bold 18px "微软雅黑"; min-height:50px;
+           }
+           QPushButton:hover { background: #a569bd; }
+          </string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+
+

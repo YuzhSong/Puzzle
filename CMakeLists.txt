@@ -23,6 +23,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(Puzzle
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        loginwidget.ui registerwidget.ui welcomewidget.ui
+        loginwidget.h registerwidget.h welcomewidget.h
+        loginwidget.cpp registerwidget.cpp welcomewidget.cpp
+        res.qrc
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET Puzzle APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
