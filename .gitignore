@@ -1,82 +1,93 @@
-# This file is used to ignore files which are generated
-# ----------------------------------------------------------------------------
+# Build and Release Folders
+bin-debug/
+bin-release/
+[Oo]bj/
+[Bb]in/
 
-*~
-*.autosave
-*.a
-*.core
-*.moc
-*.o
-*.obj
-*.orig
-*.rej
-*.so
-*.so.*
-*_pch.h.cpp
-*_resource.rc
-*.qm
-.#*
-*.*#
-core
-!core/
-tags
-.DS_Store
-.directory
-*.debug
+# Other files and folders
+.settings/
+
+# Executables
+*.swf
+*.air
+*.ipa
+*.apk
+
+# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
+# should NOT be excluded as they contain compiler settings and other important
+# information for Eclipse / Flash Builder.
+
+# =================================
+# Qt/C++ 项目特定忽略规则
+# =================================
+
+# Qt 构建目录
+/build/
+build-*/
+Debug/
+Release/
+*.pro.user
+*.pro.user.*
+*.qmake.stash
 Makefile*
-*.prl
-*.app
 moc_*.cpp
+moc_*.h
 ui_*.h
 qrc_*.cpp
-Thumbs.db
-*.res
-*.rc
-/.qmake.cache
-/.qmake.stash
+*.moc
 
-# qtcreator generated files
-*.pro.user*
-*.qbs.user*
-CMakeLists.txt.user*
-
-# xemacs temporary files
-*.flc
-
-# Vim temporary files
-.*.swp
-
-# Visual Studio generated files
-*.ib_pdb_index
+# 编译输出文件
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.pdb
 *.idb
 *.ilk
-*.pdb
-*.sln
-*.suo
-*.vcproj
-*vcproj.*.*.user
-*.ncb
-*.sdf
-*.opensdf
-*.vcxproj
-*vcxproj.*
+*.exp
 
-# MinGW generated files
-*.Debug
-*.Release
+# Qt Creator 临时文件
+*.autosave
+gamewidget.cpp.autosave
 
-# Python byte code
-*.pyc
+# 项目可执行文件
+bejeweled_2021
+bejeweled_2021.exe
 
-# Binaries
-# --------
-*.dll
-*.exe
+# 服务器构建文件
+server/server/build-*/
 
-# Directories with generated files
-.moc/
-.obj/
-.pch/
-.rcc/
-.uic/
-/build*/
+# =================================
+# 项目特定文件（根据你的实际文件列表添加）
+# =================================
+
+# 重复的服务器文件夹
+server(1)/
+
+# Windows 系统/第三方 DLL
+gdi32.dll
+
+
+# 日志文件
+*.log
+*.tmp
+*.temp
+
+# =================================
+# 操作系统文件
+# =================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =================================
+# IDE 配置文件
+# =================================
+.vscode/
+.idea/
+*.sublime-workspace
+*.swp
