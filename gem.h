@@ -29,6 +29,9 @@ public:
     QLabel* magicLabel;
     QLabel* normalLabel;
 
+    bool isHighlighted; // 新增：标记是否高亮
+    void setHighlight(bool highlight); // 新增：设置高亮状态
+
 private:
 
 signals:

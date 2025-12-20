@@ -39,3 +39,17 @@ void Gem::initialPath(){
 void Gem::bomb(){
     delete this;
 }
+
+void Gem::setHighlight(bool highlight) {
+    isHighlighted = highlight;
+    if (highlight) {
+        // 高亮样式：添加黄色边框和缩放效果
+        setStyleSheet(QString("QPushButton{border: 3px solid yellow; border-radius: 8px; "
+                              "border-image:url(%1); transform: scale(1.05);}")
+                          .arg(path_stable[type]));
+    } else {
+        // 恢复默认样式
+        setStyleSheet(QString("QPushButton{border-image:url(%1);}").arg(path_stable[type]));
+    }
+    update(); // 刷新显示
+}

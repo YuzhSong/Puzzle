@@ -1,12 +1,20 @@
 #include "gamewidget.h"
 #include "ui_gamewidget.h"
+#include <utility> // 添加这个头文件用于 std::pair 和 std::make_pair
 
+// 修改构造函数
 GameWidget::GameWidget(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::GameWidget)
 {
     ui->setupUi(this);
+    // 在构造函数体内初始化新成员
+    hintBlinkTimer = nullptr;
+    hintLabel1 = nullptr;
+    hintLabel2 = nullptr;
+    hintBlinkState = false;
 }
+
 void GameWidget::setupScene(int i){
     gameOver=false;
     is_paused=false;
@@ -248,15 +256,19 @@ void GameWidget::setupScene(int i){
     });
 
     connect(reSetButton,&HoverButton::clicked,[=]{
-       if(is_acting||gameOver)
-           return;
-       reSetBoard();
+        if(is_acting||gameOver)
+            return;
+        reSetBoard();
     });
 
     connect(menuButton, &HoverButton::clicked, [=](){
 
         if(is_acting)
             return;
+
+        // 清除提示高亮
+        clearHintHighlight();
+
         client->update(score);
         sound->stop();
         this->hide();
@@ -304,47 +316,55 @@ void GameWidget::setupScene(int i){
         }
         delete boardWidget;
     }) ;
+
+    // 修改提示按钮的点击事件
     connect(hintButton,&HoverButton::clicked,[=](){
-        if(gameOver)
+        if(gameOver || is_acting)
             return;
-        if(!is_acting&&hintArrowTimes>=6){
-            hintArrowTimes=0;
-            Point p=tipsdetect();
-            QString msg=QTime::currentTime().toString()+" ("+QString::number(p.x)+","+QString::number(p.y)+")";
-            QLabel *hintLabel=new QLabel(this);
-            hintLabel->setGeometry(665+p.x*118+39,44+p.y*118+118,40,60);
-            hintLabel->show();
-            setAdaptedImg(":/picture/arrow.png",hintLabel);
-            QPropertyAnimation* anim = new QPropertyAnimation(hintLabel,"geometry");
-            anim->setDuration(300);
-            anim->setStartValue(QRect(hintLabel->x(),hintLabel->y()+50,hintLabel->width(),hintLabel->height()));
-            anim->setEndValue(QRect(hintLabel->x(),hintLabel->y(),hintLabel->width(),hintLabel->height()));
-            anim->setEasingCurve(QEasingCurve::OutQuad);
-            anim->start();
 
-            QPropertyAnimation* danim = new QPropertyAnimation(hintLabel,"geometry");
-            connect(anim,&QPropertyAnimation::finished,[=]{
-                danim->setDuration(300);
-                danim->setEndValue(QRect(hintLabel->x(),hintLabel->y()+50,hintLabel->width(),hintLabel->height()));
-                danim->setStartValue(QRect(hintLabel->x(),hintLabel->y(),hintLabel->width(),hintLabel->height()));
-                danim->setEasingCurve(QEasingCurve::InQuad);
-                danim->start();
+        // 清除旧的提示
+        clearHintHighlight();
+
+        // 查找可交换的宝石对
+        auto swapPair = findSwapHint();
+        if(swapPair.first.x != -1 && swapPair.first.y != -1) {
+            // 存储找到的交换对
+            hintSwapPair = swapPair;
+
+            // 创建第一个提示高亮框
+            hintLabel1 = new QLabel(boardWidget);
+            hintLabel1->setGeometry(swapPair.first.x * LEN, swapPair.first.y * LEN, LEN, LEN);
+            hintLabel1->setStyleSheet("background-color: rgba(255, 255, 0, 50); border: 4px solid rgba(255, 215, 0, 200);");
+            hintLabel1->setAttribute(Qt::WA_TransparentForMouseEvents);
+            hintLabel1->show();
+
+            // 创建第二个提示高亮框
+            hintLabel2 = new QLabel(boardWidget);
+            hintLabel2->setGeometry(swapPair.second.x * LEN, swapPair.second.y * LEN, LEN, LEN);
+            hintLabel2->setStyleSheet("background-color: rgba(255, 255, 0, 50); border: 4px solid rgba(255, 215, 0, 200);");
+            hintLabel2->setAttribute(Qt::WA_TransparentForMouseEvents);
+            hintLabel2->show();
+
+            // 创建并启动闪烁定时器
+            hintBlinkTimer = new QTimer(this);
+            hintBlinkTimer->setInterval(500); // 500ms闪烁一次
+            connect(hintBlinkTimer, &QTimer::timeout, [=](){
+                hintBlinkState = !hintBlinkState;
+                if(hintLabel1) hintLabel1->setVisible(hintBlinkState);
+                if(hintLabel2) hintLabel2->setVisible(hintBlinkState);
             });
+            hintBlinkTimer->start();
 
-            connect(danim,&QPropertyAnimation::finished,[=]{
-                hintArrowTimes=hintArrowTimes+1;
-                if(hintArrowTimes>=6){
-                    if(anim)
-                        delete anim;
-                    if(danim)
-                        delete danim;
-                    if(hintLabel)
-                        delete hintLabel;
-                }else{
-                    anim->start();
-                }
-            });
-
+            // 播放提示音效
+            if(effect) delete effect;
+            effect = new QSoundEffect(this);
+            effect->setSource(QUrl("qrc:/music/effect/hint.wav"));
+            effect->play();
+        } else {
+            // 没有找到可交换的位置
+            QSoundEffect *noHint = new QSoundEffect(this);
+            noHint->setSource(QUrl("qrc:/music/effect/no_hint.wav"));
+            noHint->play();
         }
     });
 
@@ -484,6 +504,22 @@ void GameWidget::forbidAll(bool forbid){//true forbit ,false release
                 gems[i][j]->setAttribute(Qt::WA_TransparentForMouseEvents, forbid);
         }
     }
+
+    // 如果禁用所有，也隐藏提示框
+    if(forbid) {
+        if(hintLabel1) hintLabel1->setVisible(false);
+        if(hintLabel2) hintLabel2->setVisible(false);
+        if(hintBlinkTimer && hintBlinkTimer->isActive()) {
+            hintBlinkTimer->stop();
+        }
+    } else {
+        // 恢复显示
+        if(hintLabel1 && hintLabel2) {
+            hintLabel1->setVisible(hintBlinkState);
+            hintLabel2->setVisible(hintBlinkState);
+            if(hintBlinkTimer) hintBlinkTimer->start();
+        }
+    }
 }
 
 //关于宝石的随机数生成
@@ -609,11 +645,11 @@ void GameWidget::allFallOut(){
         Sleep(90);
     }
     Sleep(600);
-//    for(int j = 7; j >=0; --j){
-//        for(int i = 0; i <8 ; ++i){
-//           gems[i][j]->bomb();
-//        }
-//    }
+    //    for(int j = 7; j >=0; --j){
+    //        for(int i = 0; i <8 ; ++i){
+    //           gems[i][j]->bomb();
+    //        }
+    //    }
     is_acting=false;
 }
 
@@ -686,6 +722,8 @@ void GameWidget::magicCollect(int coType,int toX,int toY){
 }
 
 void GameWidget::act(Gem* gem){
+    // 清除提示高亮
+    clearHintHighlight();
     hintArrowTimes=6;
 
     int len = 118;
@@ -710,7 +748,7 @@ void GameWidget::act(Gem* gem){
     }
     //如果有宝石选中，并点击了邻居宝石，则让宝石交换
     else if(  ( (selectedX==gemX)&&(abs(selectedY-gemY)==1)  )
-              || ( (selectedY==gemY)&&(abs(selectedX-gemX)==1) ) ){
+             || ( (selectedY==gemY)&&(abs(selectedX-gemX)==1) ) ){
         int SX = selectedX;
         int SY = selectedY;
         selectedX=-1;
@@ -1562,4 +1600,104 @@ void GameWidget::makeStopSpin(int SX,int SY){
 
     gems[SX][SY]->setStyleSheet(QString("QPushButton{border-image:url(%1);}").arg(gems[SX][SY]->path_stable[gems[SX][SY]->type]));
     gems[SX][SY]->setIconSize(QSize(LEN, LEN));
+}
+
+// 新添加的提示功能函数实现
+
+// 清除提示高亮
+void GameWidget::clearHintHighlight() {
+    if(hintBlinkTimer) {
+        hintBlinkTimer->stop();
+        delete hintBlinkTimer;
+        hintBlinkTimer = nullptr;
+    }
+
+    if(hintLabel1) {
+        delete hintLabel1;
+        hintLabel1 = nullptr;
+    }
+
+    if(hintLabel2) {
+        delete hintLabel2;
+        hintLabel2 = nullptr;
+    }
+
+    hintBlinkState = false;
+}
+
+// 查找可交换的宝石对
+std::pair<Point, Point> GameWidget::findSwapHint() {
+    // 遍历所有相邻的宝石对
+    for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 8; j++) {
+            // 检查右侧邻居
+            if(i + 1 < 8) {
+                if(checkThreeMatch(i, j, i + 1, j)) {
+                    return std::make_pair(Point(i, j), Point(i + 1, j));
+                }
+            }
+            // 检查下方邻居
+            if(j + 1 < 8) {
+                if(checkThreeMatch(i, j, i, j + 1)) {
+                    return std::make_pair(Point(i, j), Point(i, j + 1));
+                }
+            }
+        }
+    }
+    return std::make_pair(Point(-1, -1), Point(-1, -1));
+}
+
+// 检查交换两个宝石是否能形成三连消
+bool GameWidget::checkThreeMatch(int x1, int y1, int x2, int y2) {
+    // 临时交换宝石类型
+    std::swap(gemType[x1][y1], gemType[x2][y2]);
+
+    bool foundMatch = false;
+
+    // 检查交换后是否形成三连消
+    // 检查行
+    for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 6; j++) { // 只需要检查到第6列，因为需要连续3个
+            unsigned int baseType1 = gemType[i][j];
+            unsigned int baseType2 = gemType[i][j+1];
+            unsigned int baseType3 = gemType[i][j+2];
+
+            // 如果是特殊宝石，获取基础类型（除以10）
+            if(baseType1 > 10) baseType1 = baseType1 / 10;
+            if(baseType2 > 10) baseType2 = baseType2 / 10;
+            if(baseType3 > 10) baseType3 = baseType3 / 10;
+
+            if(baseType1 == baseType2 && baseType2 == baseType3 && baseType1 != 100) {
+                foundMatch = true;
+                break;
+            }
+        }
+        if(foundMatch) break;
+    }
+
+    // 检查列
+    if(!foundMatch) {
+        for(int i = 0; i < 6; i++) { // 只需要检查到第6行
+            for(int j = 0; j < 8; j++) {
+                unsigned int baseType1 = gemType[i][j];
+                unsigned int baseType2 = gemType[i+1][j];
+                unsigned int baseType3 = gemType[i+2][j];
+
+                if(baseType1 > 10) baseType1 = baseType1 / 10;
+                if(baseType2 > 10) baseType2 = baseType2 / 10;
+                if(baseType3 > 10) baseType3 = baseType3 / 10;
+
+                if(baseType1 == baseType2 && baseType2 == baseType3 && baseType1 != 100) {
+                    foundMatch = true;
+                    break;
+                }
+            }
+            if(foundMatch) break;
+        }
+    }
+
+    // 恢复交换
+    std::swap(gemType[x1][y1], gemType[x2][y2]);
+
+    return foundMatch;
 }
