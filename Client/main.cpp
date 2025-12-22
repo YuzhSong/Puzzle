@@ -4,6 +4,7 @@
 #include <QApplication>
 
 #include "client.h"
+
 Client *client;
 void sleep(int msec){
     QTime dieTime = QTime::currentTime().addMSecs(msec);

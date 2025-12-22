@@ -1,8 +1,9 @@
 #include "registerpage.h"
 #include "ui_registerpage.h"
 #include "qmessagebox.h"
-//#include "startpage.h"
-//#include "ui_startpage.h"
+#include <QRegularExpression>
+
+extern Client *client;
 
 class StartPage;
 
@@ -159,42 +160,58 @@ void registerPage::SetButton(){
   //  }) ;
 
   connect(confirmButton,&HoverButton::clicked, [=]() {
-    QString tempId = idText->toPlainText();
-    QString tempPwd = pwdText->text();
-    client->registerNewUser(tempId, tempPwd);
-    int flag = client->registerFlag;
+      QString tempId = idText->toPlainText().trimmed();  // 去除空格
+      QString tempPwd = pwdText->text().trimmed();
 
-    QMessageBox msgBox;   // 生成对象
-    if(flag == 0) {
-      msgBox.setText("User has been registered");    // 设置文本
-    }
+      // 输入验证
+      if (tempId.isEmpty()) {
+          QMessageBox::warning(this, "注册失败", "用户名不能为空！");
+          return;
+      }
 
-    if(flag == 1) {
-      msgBox.setText("User register successfully");    // 设置文本
-    }
+      if (tempPwd.isEmpty()) {
+          QMessageBox::warning(this, "注册失败", "密码不能为空！");
+          return;
+      }
 
-    msgBox.exec();
+      // 密码格式限制：6-20位，包含字母和数字
+      QRegularExpression pwdRegex("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{6,20}$");
+      if (!pwdRegex.match(tempPwd).hasMatch()) {
+          QMessageBox::warning(this, "密码格式错误",
+                               "密码必须满足以下要求：\n"
+                               "• 长度6-20位\n"
+                               "• 至少包含一个字母和一个数字\n"
+                               "• 只能包含字母、数字和特殊字符 @$!%*?&");
+          return;
+      }
 
-    idText->setText((""));
-    pwdText->setText((""));
-    //    noticePage *notice = new noticePage();
-    //    if(flag == 0) {
-    //      notice->setNotice("User has been registered");
-    //    }
+      // 用户名格式限制：3-15位，字母数字开头
+      QRegularExpression userRegex("^[A-Za-z0-9][A-Za-z0-9_.]{2,14}$");
+      if (!userRegex.match(tempId).hasMatch()) {
+          QMessageBox::warning(this, "用户名格式错误",
+                               "用户名必须满足以下要求：\n"
+                               "• 长度3-15位\n"
+                               "• 以字母或数字开头\n"
+                               "• 只能包含字母、数字、下划线和点");
+          return;
+      }
 
-    //    if(flag == 1) {
-    //      notice->setNotice("User register successfully");
-    //      //      user a;
-    //      //      a.username = tempId;
-    //      //      a.password = tempPwd;
-    //      //      a.score = 0;
-    //      //      a.rank = 0;
-    //      //      database->update(a);
-    //      //      database->setGamer(a);
-    //    }
+      // 调用客户端注册
+      client->registerNewUser(tempId, tempPwd);
+      int flag = client->registerFlag;
 
-    //    notice->show();
+      QMessageBox msgBox;
+      if(flag == 0) {
+          msgBox.setText("用户已存在！");
+      } else if(flag == 1) {
+          msgBox.setText("注册成功！");
+      } else {
+          msgBox.setText("注册失败，请稍后重试！");
+      }
 
+      msgBox.exec();
+      idText->setText("");
+      pwdText->setText("");
   });
 }
 

@@ -1,6 +1,8 @@
 #include "selectlevel.h"
 #include "ui_selectlevel.h"
 #include"qfont.h"
+#include <QMessageBox>
+
 selectlevel::selectlevel(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::selectlevel)
@@ -55,6 +57,8 @@ selectlevel::selectlevel(QWidget *parent) :
 
     initColor();
     level1L->setPalette(purple);
+
+    connect(ui->DoneB, &QPushButton::clicked, this, &selectlevel::on_DoneB_clicked);
 }
 
 selectlevel::~selectlevel()
@@ -62,6 +66,14 @@ selectlevel::~selectlevel()
     delete ui;
 }
 
+// 辅助函数：检查登录状态
+bool selectlevel::checkLogin() {
+    if (!client || !client->isLogined) {
+        QMessageBox::warning(this, "禁止访问", "请先登录游戏账号！\nPlease login first.");
+        return false;
+    }
+    return true;
+}
 
 //点击变色
 void selectlevel::on_level1B_pressed()
@@ -116,7 +128,13 @@ void selectlevel::on_DoneB_released()
 //点击done关闭难度选择界面
 void selectlevel::on_DoneB_clicked()
 {
+    // 检查登录状态
+    if (!checkLogin()) {
+        return;
+    }
 
+    this->setVisible(false);
+    emit selectDone(level);
 }
 
 void selectlevel::initColor()

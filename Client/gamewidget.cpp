@@ -1,6 +1,8 @@
 #include "gamewidget.h"
 #include "ui_gamewidget.h"
 
+extern Client *client;
+
 GameWidget::GameWidget(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::GameWidget)
@@ -257,7 +259,9 @@ void GameWidget::setupScene(int i){
 
         if(is_acting)
             return;
-        client->update(score);
+        if (client && client->isLogined) {
+            client->update(score);
+        }
         sound->stop();
         this->hide();
         showStartPage();

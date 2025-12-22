@@ -5,12 +5,21 @@
 #include "ui_startpage.h"
 #include "qmessagebox.h"
 
+extern Client *client;
+
 StartPage::StartPage(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::StartPage)
+    ui(new Ui::StartPage),
+    client(nullptr)
 {
     ui->setupUi(this);
-//select=new selectlevel();
+    if (::client) {
+        this->client = ::client;
+    }
+    select=new selectlevel();
+    if (client) {
+        select->setClient(client);
+    }
     //循环播放背景音乐
     qDebug()<<QCoreApplication::applicationDirPath();
     sound=new QSoundEffect(this);
@@ -69,6 +78,14 @@ StartPage::~StartPage()
 {
     delete ui;
 }
+
+void StartPage::setClient(Client* client) {
+    this->client = client;
+    if (select) {
+        select->setClient(client);
+    }
+}
+
 QPropertyAnimation * StartPage::ShowTitle(){
     QPixmap pix;
     QLabel *title = new QLabel(this);
@@ -83,6 +100,7 @@ QPropertyAnimation * StartPage::ShowTitle(){
     return animation;
 
 }
+
 QPropertyAnimation *  StartPage::ShowBackground(){
     QPixmap pix;
     QLabel *background = new QLabel(this);
@@ -213,8 +231,8 @@ void StartPage::SetButton(){
 
     connect(logoutButton, &HoverButton::clicked, [=](){
       QMessageBox msgBox;   // 生成对象
-      if(client->logined == true) {
-        client->logined = false;
+      if(client->isLogined == true) {
+        client->isLogined = false;
         msgBox.setText("The user log out");    // 设置文本
       } else {
         msgBox.setText("No user log in");

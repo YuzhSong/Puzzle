@@ -31,6 +31,8 @@ class StartPage : public QWidget
 public:
     explicit StartPage(QWidget *parent = nullptr);
     ~StartPage();
+
+    void setClient(Client* client);
     int ForGameL=1;
     GameWidget* gameWidget = new GameWidget;
     selectlevel* select=new selectlevel();
@@ -52,6 +54,7 @@ private:
     Ui::StartPage *ui;
     HoverButton *startButton, *recordButton, *settingButton;
     //HoverButton *bright,*volume;
+    Client* client = nullptr;
 
     QLabel *background;
     QPropertyAnimation *  ShowBackground();

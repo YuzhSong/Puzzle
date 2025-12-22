@@ -4,6 +4,7 @@
 //#include "startpage.h"
 //#include "ui_startpage.h"
 
+extern Client *client;
 
 class StartPage;
 
@@ -161,7 +162,7 @@ void loginPage::SetButton(){
   connect(confirmButton,&HoverButton::clicked, [=]() {
     QString tempId = idText->toPlainText();
     QString tempPwd = pwdText->text();
-    if(client->logined == true){
+    if(client->isLogined == true){
       QMessageBox msgBox;
       msgBox.setText("Already logged in user");
       msgBox.exec();
@@ -170,7 +171,7 @@ void loginPage::SetButton(){
       client->verifyUser(tempId, tempPwd);
       int flag = client->verifyFlag;
       if(flag == 2) {
-        client->logined = true;
+        client->isLogined = true;
       }
       //    int flag = database->loginFunc(tempId,tempPwd);
       //    vector<user> tempGamers =database->showRankList();

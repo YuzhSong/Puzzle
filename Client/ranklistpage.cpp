@@ -7,6 +7,7 @@
 #include <QDesktopServices>
 #include "iostream"
 
+extern Client *client;
 
 //class StartPage;
 
