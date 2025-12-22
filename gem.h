@@ -31,6 +31,8 @@ public:
 
     bool isHighlighted; // 新增：标记是否高亮
     void setHighlight(bool highlight); // 新增：设置高亮状态
+    QLabel* specialBorder = nullptr; // 特殊宝石边框
+     int specialType = 0;  // 特殊宝石类型：0=普通，1=爆炸，2=十字消，3=万能，4=收集
 
 private:
 
