@@ -2,7 +2,7 @@
 #include "ui_ranklistpage.h"
 //#include "startpage.h"
 //#include "ui_startpage.h"
-#include<windows.h>
+//#include<windows.h>
 #include<stdio.h>
 #include <QDesktopServices>
 #include "iostream"
