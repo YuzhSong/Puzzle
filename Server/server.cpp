@@ -27,7 +27,7 @@ void server::readData() {
         QByteArray content;
         content.append("REG_RESULT");
         content.append('&');
-        content.append(QString::number(information));
+        content.append(QString::number(information).toUtf8());
         
         clientSocket->write(content);
     }
@@ -36,7 +36,7 @@ void server::readData() {
         QByteArray content;
         content.append("VER_RESULT");
         content.append('&');
-        content.append(QString::number(information));
+        content.append(QString::number(information).toUtf8());
         qDebug() << "send: "<< content << "\n";
         clientSocket->write(content);
     }
@@ -45,7 +45,7 @@ void server::readData() {
         QByteArray content;
         content.append("PRO_RESULT");
         content.append('&');
-        content.append(list);
+        content.append(list.toUtf8());
         qDebug() << "send: "<< content << "\n";
         clientSocket->write(content);
     }
@@ -54,7 +54,7 @@ void server::readData() {
         QByteArray content;
         content.append("RAN_RESULT");
         content.append('&');
-        content.append(list);
+        content.append(list.toUtf8());
         qDebug() << "send: "<< content << "\n";
         clientSocket->write(content);
     }
