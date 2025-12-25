@@ -5,26 +5,29 @@
 #include <QObject>
 class Client:public QObject
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  Client();
-  bool registerNewUser(QString userName, QString password);
-  bool verifyUser(QString userName, QString password);
-  void getProfile();
-  void getRankList();
-  void update(int score);
-  QString ranklist;
-  QString userlist;
-  int verifyFlag;
-  int registerFlag;
-  bool logined;
+    Client();
+    bool registerNewUser(QString userName, QString password);
+    bool verifyUser(QString userName, QString password);
+    void getProfile();
+    void getRankList();
+    void submitScore(QString username, int difficulty, int score);  // 新增：提交分数
+    void update(int score);  // 保持向后兼容
+
+    QString ranklist;
+    QString userlist;
+    int verifyFlag;
+    int registerFlag;
+    bool logined;
+    QString username;  // 公开用户名，方便其他类访问
+
 private:
-  QTcpSocket * socket;
-  QString username;
-  QString password;
+    QTcpSocket * socket;
+    QString password;
 
 private slots:
-  void readDataSlot();
+    void readDataSlot();
 };
 
 #endif // CLIENT_H

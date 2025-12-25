@@ -8,12 +8,16 @@
 
 class server : public QObject
 {
+    Q_OBJECT  // 添加Q_OBJECT宏，如果需要信号槽的话
+
 public:
     server();
+
 private:
     QTcpServer * serverEnd;
     QTcpSocket * clientSocket;
     dataBase * database;
+
 private slots:
     void clientHandler();
     void readData();

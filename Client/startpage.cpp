@@ -1,9 +1,10 @@
 //#include<windows.h>
-#include<stdio.h>
+#include <stdio.h>
 #include <QDesktopServices>
 #include "startpage.h"
 #include "ui_startpage.h"
 #include "qmessagebox.h"
+#include "gamewidget.h"
 
 StartPage::StartPage(QWidget *parent) :
     QWidget(parent),
@@ -115,10 +116,23 @@ void StartPage::SetButton(){
     connect(&settingP,&settingpage::selectLan,[=](int index){
         this->ForGameL=index;
     });
-     connect(select,&selectlevel::selectDone,[=](int difficulty){
+
+    //难度选择
+    connect(select,&selectlevel::selectDone,[=](int difficulty){
         this->hide();
         sound->stop();
-        gameWidget->DIFFICULITY=difficulty;
+
+        // 直接设置难度
+        gameWidget->DIFFICULITY = difficulty;
+
+        // 不再调用 setUserInfo，或者创建这个函数
+        // 如果你不需要存储用户名，可以跳过这一步
+        if(client->logined) {
+            qDebug() << "Starting game for user:" << client->username << "with difficulty:" << difficulty;
+        } else {
+            qDebug() << "Starting game for guest with difficulty:" << difficulty;
+        }
+
         gameWidget->setupScene(this->ForGameL);
         gameWidget->show();
     });
@@ -185,16 +199,10 @@ void StartPage::SetButton(){
     });
 
     connect(recordButton, &HoverButton::clicked, [=](){
-      this->hide();
-      sound->stop();
-      client->getProfile();
-      client->getRankList();
-      QString s = client->ranklist;
-      QString s1 = client->userlist;
-      ranklist->setRankList(s);
-      ranklist->setUserRankList(s1);
-      ranklist->show();
-
+        this->hide();
+        sound->stop();
+        // 不再在这里自动加载数据，而是在ranklist页面点击查询按钮时加载
+        ranklist->show();
     }) ;
 
     connect(loginButton, &HoverButton::clicked, [=](){

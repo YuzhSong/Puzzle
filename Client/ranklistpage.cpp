@@ -1,223 +1,208 @@
 #include "ranklistpage.h"
 #include "ui_ranklistpage.h"
-//#include "startpage.h"
-//#include "ui_startpage.h"
-//#include<windows.h>
-#include<stdio.h>
-#include <QDesktopServices>
-#include "iostream"
+#include "client.h"
+#include <QTime>
+#include <QMessageBox>
+#include <QDebug>
+#include <QKeyEvent>
+#include <QShowEvent>
+#include <QCoreApplication>
+#include <QEventLoop>
+#include <QDateTime>
 
-
-//class StartPage;
+extern Client *client;
 
 rankListPage::rankListPage(QWidget *parent) :
-                                              QWidget(parent),
-                                              ui(new Ui::rankListPage)
+    QWidget(parent),
+    ui(new Ui::rankListPage),
+    client(nullptr)  // 初始化为nullptr
 {
-    this->hide();
-  ui->setupUi(this);
-  returnButton = new HoverButton();
+    ui->setupUi(this);
 
-  returnButton->setSound(":/music/button/button_mouseover.wav", ":/music/button/button_mouseleave.wav", ":/music/button/button_press.wav", ":/music/button/button_release.wav"); //默认音效
-  //禁用最大化按钮、设置窗口大小固定
-  this->setWindowFlags(windowFlags()& ~Qt::WindowMaximizeButtonHint);
-  this->setFixedSize(this->width(),this->height());
+    // 禁用最大化按钮、设置窗口大小固定
+    this->setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint);
+    this->setFixedSize(1600, 900);
 
-  labelRanklist = new QLabel(this);
-  labelUserRanklist = new QLabel(this);
+    qDebug() << "排行榜页面构造函数开始";
 
-  labelRanklist->setText("Total Rank List");
-  labelUserRanklist->setText("User Rank List");
+    // 设置客户端指针
+    this->client = ::client;  // 使用全局的client
 
-  QFont ftr;
-  ftr.setPointSize(30);
-  labelRanklist->setFont(ftr);
-  labelUserRanklist->setFont(ftr);
+    // 设置鼠标
+    setCursor(QCursor(QPixmap("://picture/mouse1.png")));
 
-  labelRanklist->setGeometry(this->width()/2+100,this->height()/2-30,1000,450);
-  labelUserRanklist->setGeometry(this->width()/2+1000,this->height()/2-30,1000,450);
+    // 设置按钮文字（如果有HoverButton的特殊方法）
+    if (ui->returnButton) {
+        ui->returnButton->showContent("Return", 18);
+    }
+    if (ui->queryButton) {
+        ui->queryButton->showContent("Query Rankings", 18);
+    }
 
+    // 初始文本
+    ui->ranklist->setText("Click 'Query Rankings' to view rankings.\n\n点击'查询排行'查看排行榜。");
+    ui->userRanklist->setText("Your personal game records will be shown here.\n\n您的个人游戏记录将显示在这里。");
 
-  ranklist = new QTextBrowser(this);
-  //  ranklist->setText("");
-  ranklist->setText("ID\t\t\t\tSCORE\t\t\t\tRANK\n");
-  QFont ft;
-  ft.setPointSize(20);
-  ranklist->setFont(ft);
-  ranklist->setGeometry(this->width()/2+100,this->height()/2+250,1000,450);
-  QPalette pl = ranklist->palette();
-  pl.setBrush(QPalette::Base,QBrush(QColor(255,0,0,0)));
-  ranklist->setPalette(pl);
-  ranklist->setStyleSheet("QTextBrowser{border-width:0;border-style:outset}");
+    // 确保所有控件都可见
+    ui->ranklist->setVisible(true);
+    ui->userRanklist->setVisible(true);
+    ui->totalRankGroup->setVisible(true);
+    ui->userRankGroup->setVisible(true);
+    ui->difficultyGroupBox->setVisible(true);
+    ui->titleLabel->setVisible(true);
+    ui->returnButton->setVisible(true);
+    ui->queryButton->setVisible(true);
 
-  userRanklist = new QTextBrowser(this);
-  //  ranklist->setText("");
-  userRanklist->setText("ID\t\tSCORE\t\t\n");
-  QFont ft1;
-  ft1.setPointSize(20);
-  userRanklist->setFont(ft1);
-  userRanklist->setGeometry(this->width()/2+1000,this->height()/2+250,1000,450);
-  QPalette pl1 = ranklist->palette();
-  pl1.setBrush(QPalette::Base,QBrush(QColor(255,0,0,0)));
-  userRanklist->setPalette(pl);
-  userRanklist->setStyleSheet("QTextBrowser{border-width:0;border-style:outset}");
+    // 连接信号槽
+    connect(ui->returnButton, &HoverButton::clicked,
+            this, &rankListPage::onReturnButtonClicked);
+    connect(ui->queryButton, &HoverButton::clicked,
+            this, &rankListPage::onQueryButtonClicked);
 
-
-  //全屏
-  QWidget::showFullScreen();
-  //设置窗口背景黑色
-  QPalette palette(this->palette());
-  palette.setColor(QPalette::Window, Qt::black);
-  this->setPalette(palette);
-  //设置鼠标-普通
-  setCursor(QCursor(QPixmap("://picture/mouse1.png")));
-  //    QTimer::singleShot(1500, this, [=](){
-  QParallelAnimationGroup *group = new QParallelAnimationGroup;
-  group->addAnimation(ShowBackground());
-  SetButton();
-  returnButton->showContent("Return",30);
-
-  group->addAnimation(returnButton->textAnim);
-
-  group->addAnimation(ShowTitle());
-  Sleep(200);
-  group->start(QAbstractAnimation::DeleteWhenStopped);
-  //    });
-
-  //  vector<player> tempGamers =database->showRankList();
-  client->getProfile();
-  client->getRankList();
-  QString s = client->ranklist;
-  QString s1 = client->userlist;
-  //  for (auto iter = tempGamers.begin(); iter != tempGamers.end(); iter++) {
-  //    //      qDebug()<<QString("id:%1    password:%2    score:%3    rank:%4").arg((*iter).username).arg((*iter).password).arg((*iter).score).arg((*iter).rank);
-  //    s = s + (*iter).username + "\t\t\t\t" + QString::number((*iter).score) + "\t\t\t\t" + QString::number((*iter).rank)  + "\n";
-  //    cout << s.toStdString() << endl;
-  //  }
-
-  labelRanklist->raise();
-  labelUserRanklist->raise();
-
-  ranklist->setText(s);
-  ranklist->raise();
-
-  userRanklist->setText(s1);
-  userRanklist->raise();
-
-  this->hide();
+    qDebug() << "排行榜页面构造函数完成";
 }
 
 rankListPage::~rankListPage()
 {
-  delete ui;
+    delete ui;
 }
 
-void rankListPage::setUserRankList(QString s) {
-  userRanklist->setText(s);
+void rankListPage::setUserRankList(const QString &s)
+{
+    qDebug() << "设置用户排行榜内容";
+    ui->userRanklist->setText(s);
+    ui->userRanklist->repaint();  // 强制重绘
 }
 
-void rankListPage::setRankList(QString s) {
-  ranklist->setText(s);
+void rankListPage::setRankList(const QString &s)
+{
+    qDebug() << "设置总排行榜内容";
+    ui->ranklist->setText(s);
+    ui->ranklist->repaint();  // 强制重绘
 }
 
-QPropertyAnimation * rankListPage::ShowTitle(){
-  QPixmap pix;
-  QLabel *title = new QLabel(this);
-  title->setGeometry(this->width()/2-903/2,-title->height(),903,200);
-  setAdaptedImg(":/picture/StartPage/title.png",title);
-  title->show();
-  QPropertyAnimation *animation = new QPropertyAnimation(title, "geometry",this);
-  animation->setDuration(2000);
-  animation->setStartValue(QRect(title->x(), title->y(), title->width(), title->height()));
-  animation->setEndValue(QRect(title->x(), 100, title->width(), title->height()));
-  animation->setEasingCurve(QEasingCurve::OutExpo);
-  return animation;
-
-}
-QPropertyAnimation *  rankListPage::ShowBackground(){
-  QPixmap pix;
-  QLabel *background = new QLabel(this);
-  bkAnim = new QPropertyAnimation(background, "geometry",this);
-  setBkImg("://picture/StartPage/background.png",background);
-  background->show();
-  bkAnim->setDuration(2000);
-  bkAnim->setStartValue(QRect(background->x(), background->y(), background->width(), background->height()));
-  bkAnim->setEndValue(QRect(background->x(), this->height() - background->height(), background->width(), background->height()));
-  bkAnim->setEasingCurve(QEasingCurve::InOutCubic);
-  return bkAnim;
-}
-
-void rankListPage::SetButton(){
-  returnButton->setCircle(this->width()/10, this->width()/2, this->height()/2+400, this->width(), this->height(),\
-                           ":/picture/button/ball.png", "", this);
-
-  connect(returnButton, &HoverButton::clicked, [=](){
+void rankListPage::onReturnButtonClicked()
+{
+    qDebug() << "返回按钮点击";
     this->hide();
-
-    showStartPage();
-    //    vector<user> tempGamers =database->showRankList();
-    //    QString s = "ID\t\t\t\tSCORE\t\t\t\tRANK\n";
-
-    //    for (auto iter = tempGamers.begin(); iter != tempGamers.end(); iter++) {
-    //      //      qDebug()<<QString("id:%1    password:%2    score:%3    rank:%4").arg((*iter).username).arg((*iter).password).arg((*iter).score).arg((*iter).rank);
-    //      s = s + (*iter).username + "\t\t\t\t" + QString::number((*iter).score) + "\t\t\t\t" + QString::number((*iter).rank)  + "\n";
-    //      cout << s.toStdString() << endl;
-    //    }
-
-    //    ranklist->setText(s);
-    //    this->hide();
-    //    gameWidget->setupScene();
-    //    gameWidget->show();
-  }) ;
-
-  //  connect(gameWidget, &GameWidget::showStartPage, [=](){
-  //    this->show();
-  //  }) ;
-
-
+    emit showStartPage();
 }
 
+void rankListPage::onQueryButtonClicked()
+{
+    qDebug() << "查询按钮点击";
 
-//将path的图片放置到label上，自适应label大小
-void rankListPage::setAdaptedImg(QString path,QLabel *label)
-{
-  QImage image(path);
-  QSize size=label->size();
-  QImage image2=image.scaled(size,Qt::IgnoreAspectRatio);//重新调整图像大小以适应label
-  label->setPixmap(QPixmap::fromImage(image2));//显示
+    // 获取选择的难度
+    QString difficulty;
+    if (ui->easyRadio->isChecked())
+        difficulty = "Easy";
+    else if (ui->mediumRadio->isChecked())
+        difficulty = "Medium";
+    else if (ui->hardRadio->isChecked())
+        difficulty = "Hard";
+    else
+        difficulty = "All Difficulties";
+
+    qDebug() << "选择的难度:" << difficulty;
+
+    // 显示加载中
+    ui->ranklist->setText(QString("Loading %1 rankings...\n\n加载%2排行榜中...")
+                              .arg(difficulty)
+                              .arg(difficulty == "All Difficulties" ? "所有难度" : difficulty));
+    ui->userRanklist->setText("Loading personal records...\n\n加载个人记录中...");
+
+    // 强制更新显示
+    QCoreApplication::processEvents();
+
+    // 检查客户端是否存在
+    if (!client) {
+        qDebug() << "客户端未初始化，显示示例数据";
+
+        // 显示示例数据 - 修复字符串连接
+        QString header = QString("=== %1 Ranking ===\n\n").arg(difficulty.toUpper());
+        QString exampleData = header +
+                              "Rank  Player            Score  Time\n" +
+                              "------------------------------------\n" +
+                              "1.    Player_Alpha      9500  02:15\n" +
+                              "2.    Player_Beta       8900  02:30\n" +
+                              "3.    Player_Gamma      8500  02:45\n" +
+                              "4.    Player_Delta      8200  03:00\n" +
+                              "5.    Player_Epsilon    7900  03:10\n\n" +
+                              "Last updated: " + QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+
+        ui->ranklist->setText(exampleData);
+
+        // 个人记录示例 - 修复字符串连接
+        QString personalData = QString("=== Your Records ===\n\n") +
+                               "Rank  Score    Difficulty  Date\n" +
+                               "--------------------------------\n" +
+                               "3rd   8500     Medium      " + QDateTime::currentDateTime().toString("MM-dd") + "\n" +
+                               "7th   7200     Hard        " + QDateTime::currentDateTime().addDays(-1).toString("MM-dd") + "\n" +
+                               "12th  6800     Easy        " + QDateTime::currentDateTime().addDays(-2).toString("MM-dd") + "\n\n" +
+                               "Best Score: 8500 (Medium)";
+
+        ui->userRanklist->setText(personalData);
+        return;
+    }
+
+    qDebug() << "客户端存在，发送查询请求";
+
+    // 发送查询请求
+    client->getProfile();
+    client->getRankList();
+
+    // 等待响应
+    QTime dieTime = QTime::currentTime().addMSecs(2000);
+    while (QTime::currentTime() < dieTime) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
+
+    qDebug() << "查询完成，处理结果";
+
+    if (!client->ranklist.isEmpty()) {
+        qDebug() << "排行榜数据不为空，长度:" << client->ranklist.length();
+
+        QString header = QString("=== %1 Ranking ===\n\n").arg(difficulty.toUpper());
+        ui->ranklist->setText(header + client->ranklist);
+        ui->userRanklist->setText("=== Your Game Records ===\n\n" + client->userlist);
+    } else {
+        qDebug() << "排行榜数据为空";
+        ui->ranklist->setText("Failed to load rankings. Please try again.\n\n加载失败，请重试。");
+        ui->userRanklist->setText("Failed to load personal records.\n\n加载个人记录失败。");
+    }
 }
-//将path的图片放置到label上，自适应label大小
-void rankListPage::setBkImg(QString path,QLabel *label)
+
+void rankListPage::showEvent(QShowEvent *event)
 {
-  QImage image = QImage(path);
-  if(image.isNull()){
-    qDebug()<<"background:empty";
-  }
-  double ratio=(double)image.height()/(double)image.width();
-  QImage image2=image.scaled(this->width(),ratio*this->width(),Qt::IgnoreAspectRatio);//重新调整图像大小以适应label
-  label->setPixmap(QPixmap::fromImage(image2));//显示
-  label->setGeometry(0,0,this->width(),ratio*this->width());
+    QWidget::showEvent(event);
+    qDebug() << "排行榜页面显示事件触发";
+
+    // 确保焦点正确
+    ui->ranklist->setFocus();
+
+    // 立即更新显示
+    QCoreApplication::processEvents();
 }
 
 void rankListPage::keyPressEvent(QKeyEvent *ev)
 {
-  //Esc退出全屏
-  if(ev->key() == Qt::Key_Escape)
-  {
-    QWidget::showNormal();
-    return;
-  }
-  //F11全屏
-  if(ev->key() == Qt::Key_F11)
-  {
-    QWidget::showFullScreen();
-    return;
-  }
-  QWidget::keyPressEvent(ev);
+    // Esc退出全屏
+    if (ev->key() == Qt::Key_Escape) {
+        QWidget::showNormal();
+        return;
+    }
+    // F11全屏
+    if (ev->key() == Qt::Key_F11) {
+        QWidget::showFullScreen();
+        return;
+    }
+    QWidget::keyPressEvent(ev);
 }
+
 void rankListPage::Sleep(int msec)
 {
-  QTime dieTime = QTime::currentTime().addMSecs(msec);
-  while( QTime::currentTime() < dieTime )
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    QTime dieTime = QTime::currentTime().addMSecs(msec);
+    while (QTime::currentTime() < dieTime) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
 }

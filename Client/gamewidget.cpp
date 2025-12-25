@@ -528,6 +528,7 @@ void GameWidget::forbidAll(bool forbid){//true forbit ,false release
 int GameWidget::randomGem(){
     return QRandomGenerator::global()->bounded(1, DIFFICULITY+1);
 }
+
 void GameWidget::playSound(int type){
     QString src=":/music/effect/effect";
     switch(type){

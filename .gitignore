@@ -1,0 +1,96 @@
+# ============================================
+# Qt/C++ 项目通用忽略规则
+# ============================================
+
+# Qt 编译目录（通用模式）
+build*/
+*/build*/
+build-*
+*/build-*
+
+# 特定项目的 build 目录（添加你的项目结构）
+Client/build/
+Server/build/
+client/build/
+server/build/
+Game/build/
+UI/build/
+Database/build/
+
+# 编译输出目录
+release/
+debug/
+Debug/
+Release/
+x64/
+x86/
+bin/
+lib/
+obj/
+
+# 编译器生成的文件
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.so.*
+*.dylib
+*.a
+*.lib
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.manifest
+
+# Qt 相关文件
+*.pro.user
+*.pro.user.*
+*.pro.user.*.autosave
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+*.moc
+*.qm
+*.qrc
+
+# Makefile 和 CMake 文件
+Makefile*
+Makefile.*
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+compile_commands.json
+_deps/
+
+# ============================================
+# 系统文件
+# ============================================
+.DS_Store
+Thumbs.db
+*.swp
+*~
+*.bak
+*.tmp
+*.temp
+desktop.ini
+
+# ============================================
+# IDE 相关
+# ============================================
+.vscode/
+.idea/
+*.suo
+*.sln
+*.ncb
+*.vcxproj.*
+*.vcproj.*
+*.sdf
+ipch/
+
+# Qt Creator 构建目录（完整匹配）
+*-Build-Desktop_Qt_*_*_*_Debug/
+*-Build-Desktop_Qt_*_*_*_Release/

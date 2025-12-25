@@ -2,56 +2,40 @@
 #define RANKLISTPAGE_H
 
 #include <QWidget>
-#include <QLabel>
-#include <QtGui/QTextLine>
-#include <QPropertyAnimation>
-#include <QDebug>
-#include <QImage>
-#include <QFile>
+#include <QKeyEvent>
 #include "hoverbutton.h"
-#include "gamewidget.h"
-#include <QTime>
-#include <QTemporaryDir>
-#include <QTextBrowser>
-#include "client.h"
-//#include "startpage.h"
-//#include "ui_startpage.h"
-extern Client *client;
 
 namespace Ui {
 class rankListPage;
-//class StartPage;
 }
 
 class rankListPage : public QWidget
 {
-  Q_OBJECT
+    Q_OBJECT
 
 public:
-  explicit rankListPage(QWidget *parent = nullptr);
-  QPropertyAnimation *bkAnim;
-  void setUserRankList(QString s);
-  void setRankList(QString s);
-  ~rankListPage();
-protected:
-  virtual void keyPressEvent(QKeyEvent *ev);
-private:
-  Ui::rankListPage *ui;
-  HoverButton *returnButton;
-  QLabel *background;
-  QTextBrowser *ranklist;
-  QTextBrowser *userRanklist;
-  QLabel *labelRanklist;
-  QLabel *labelUserRanklist;
+    explicit rankListPage(QWidget *parent = nullptr);
+    ~rankListPage();
 
-  QPropertyAnimation *  ShowBackground();
-  QPropertyAnimation * ShowTitle();
-  void SetButton();
-  void setBkImg(QString path,QLabel *label);
-  void setAdaptedImg(QString path,QLabel *label);
-  void Sleep(int msec);
+    void setUserRankList(const QString &s);
+    void setRankList(const QString &s);
+
+protected:
+    void keyPressEvent(QKeyEvent *ev) override;
+    void showEvent(QShowEvent *event) override;
+
+private slots:
+    void onReturnButtonClicked();
+    void onQueryButtonClicked();
+
+private:
+    Ui::rankListPage *ui;
+    class Client *client;
+
+    void Sleep(int msec);
+
 signals:
-  void showStartPage();
+    void showStartPage();
 };
 
 #endif // RANKLISTPAGE_H

@@ -159,62 +159,72 @@ void loginPage::SetButton(){
   //  }) ;
 
   connect(confirmButton,&HoverButton::clicked, [=]() {
-    QString tempId = idText->toPlainText();
-    QString tempPwd = pwdText->text();
-    if(client->logined == true){
-      QMessageBox msgBox;
-      msgBox.setText("Already logged in user");
-      msgBox.exec();
-    }
-    else {
-      client->verifyUser(tempId, tempPwd);
-      int flag = client->verifyFlag;
-      if(flag == 2) {
-        client->logined = true;
-      }
-      //    int flag = database->loginFunc(tempId,tempPwd);
-      //    vector<user> tempGamers =database->showRankList();
-      //    bool userFlag = false;
-      //    bool pwdFlag = false;
+      QString tempId = idText->toPlainText();
+      QString tempPwd = pwdText->text();
 
-      //    for (auto iter = tempGamers.begin(); iter != tempGamers.end(); iter++) {
-      //      if(strcmp(tempId.toStdString().c_str(),(*iter).username.toStdString().c_str()) == 0) {
-      //        //          cout << "zhaodaoyoinghu" << endl;
-      //        userFlag = true;
-      //        if(strcmp(tempPwd.toStdString().c_str(),(*iter).password.toStdString().c_str()) == 0) {
-      //          pwdFlag = true;
-      //          user a = *iter;
-      //          database->setGamer(a);
-      //          cout << "mimazhengque" << endl;
-      //        }
-      //      }
-      //    }
-
-
-
-      QMessageBox msgBox;   // 生成对象
-      if(flag == 0) {
-        msgBox.setText("The user hasn't been register");    // 设置文本
+      // 检查输入是否为空
+      if(tempId.isEmpty() || tempPwd.isEmpty()) {
+          QMessageBox::warning(this, "Warning",
+                               "Username and password cannot be empty!\n\n用户名和密码不能为空！");
+          return;
       }
 
-      if(flag == 1) {
-        msgBox.setText("The user password is wrong");    // 设置文本
+      if(client->logined == true){
+          QMessageBox msgBox(this);
+          msgBox.setWindowTitle("Login Status");
+          msgBox.setText("<font size='5'>Already logged in!</font><br><br>"
+                         "<font size='4'>已有用户登录！</font>");
+          msgBox.setStyleSheet("QLabel{min-width: 400px; min-height: 100px; font-size: 18px;} QPushButton{width: 100px; height: 40px; font-size: 16px;}");
+          msgBox.setIcon(QMessageBox::Information);
+          msgBox.exec();
       }
+      else {
+          client->verifyUser(tempId, tempPwd);
 
-      if (flag == 2) {
-        msgBox.setText("User successfully logged in");    // 设置文
+          // 等待服务器响应
+          QTime dieTime = QTime::currentTime().addMSecs(1000);
+          while(QTime::currentTime() < dieTime && client->verifyFlag == -1) {
+              QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+          }
+
+          int flag = client->verifyFlag;
+          if(flag == 2) {
+              client->logined = true;
+          }
+
+          QMessageBox msgBox(this);
+          msgBox.setWindowTitle("Login Result");
+          msgBox.setTextFormat(Qt::RichText);
+          msgBox.setStyleSheet("QLabel{min-width: 400px; min-height: 100px; font-size: 18px;} QPushButton{width: 100px; height: 40px; font-size: 16px;}");
+
+          if(flag == 0) {
+              msgBox.setText("<font size='5'>User not registered!</font><br><br>"
+                             "<font size='4'>用户未注册！</font>");
+              msgBox.setIcon(QMessageBox::Warning);
+          }
+          else if(flag == 1) {
+              msgBox.setText("<font size='5'>Wrong password!</font><br><br>"
+                             "<font size='4'>密码错误！</font>");
+              msgBox.setIcon(QMessageBox::Warning);
+          }
+          else if(flag == 2) {
+              msgBox.setText("<font size='5'>Login successful!</font><br><br>"
+                             "<font size='4'>登录成功！</font>");
+              msgBox.setIcon(QMessageBox::Information);
+          }
+          else {
+              msgBox.setText("<font size='5'>Login failed!</font><br><br>"
+                             "<font size='4'>登录失败，请稍后重试。</font>");
+              msgBox.setIcon(QMessageBox::Critical);
+          }
+
+          msgBox.exec();
+
+          idText->setText((""));
+          pwdText->setText((""));
       }
-
-      msgBox.exec();  // 执行
-
-      idText->setText((""));
-      pwdText->setText((""));
-    }
-
-
   });
 }
-
 
 //将path的图片放置到label上，自适应label大小
 void loginPage::setAdaptedImg(QString path,QLabel *label)

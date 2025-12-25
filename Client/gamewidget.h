@@ -53,6 +53,9 @@ public:
     void setupScene(int i);
     QSoundEffect* sound;
 
+    // 添加用户信息设置函数
+    void setUserInfo(QString username, int difficulty);
+
 protected:
     virtual void keyPressEvent(QKeyEvent *ev) override;
 
@@ -72,6 +75,10 @@ private:
     int selectedX = -1, selectedY = -1;
     double trans = 0;
     int redBordershow = 0;
+
+    // 用户信息
+    QString currentUsername;
+    int currentDifficulty;
 
     // 提示功能相关
     bool hintBlinkState = false;
@@ -145,6 +152,9 @@ private:
     void magicCollect(int coType, int toX, int toY);
     void allFallOut();
     void reSetBoard();
+
+    // 游戏结束处理
+    void handleGameEnd();
 
     // 提示功能相关函数
     void clearHintHighlight();

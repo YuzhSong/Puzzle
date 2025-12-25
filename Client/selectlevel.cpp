@@ -29,7 +29,6 @@ selectlevel::selectlevel(QWidget *parent) :
 
     QFont font ( "Arial Black", 12, 87);
     levelL->setFont(font);
-    levelL->setFont(font);
     level1L->setFont(font);
     level2L->setFont(font);
     level3L->setFont(font);
@@ -110,7 +109,35 @@ void selectlevel::on_DoneB_released()
 {
     DoneL->setPalette(white);
     this->setVisible(false);
-    this->selectDone(level);
+
+    // 根据用户选择的 level (1,2,3) 转换为实际的宝石种类数 (4,6,7)
+    int actualDifficulty;
+    QString difficultyText;
+
+    switch(level) {
+    case 1:
+        actualDifficulty = 4;      // 简单：4种宝石
+        difficultyText = "简单";   // 中文
+        // difficultyText = "Easy"; // 英文
+        break;
+    case 2:
+        actualDifficulty = 6;      // 普通：6种宝石
+        difficultyText = "普通";
+        // difficultyText = "Medium";
+        break;
+    case 3:
+        actualDifficulty = 7;      // 困难：7种宝石
+        difficultyText = "困难";
+        // difficultyText = "Hard";
+        break;
+    default:
+        actualDifficulty = 6;      // 默认：普通
+        difficultyText = "普通";
+        // difficultyText = "Medium";
+    }
+
+    // 发送两个参数：实际的宝石种类数和文字描述
+    emit selectDone(actualDifficulty, difficultyText);
 }
 
 //点击done关闭难度选择界面

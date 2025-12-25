@@ -159,45 +159,89 @@ void registerPage::SetButton(){
   //  }) ;
 
   connect(confirmButton,&HoverButton::clicked, [=]() {
-    QString tempId = idText->toPlainText();
-    QString tempPwd = pwdText->text();
-    client->registerNewUser(tempId, tempPwd);
-    int flag = client->registerFlag;
+      QString tempId = idText->toPlainText();
+      QString tempPwd = pwdText->text();
 
-    QMessageBox msgBox;   // 生成对象
-    if(flag == 0) {
-      msgBox.setText("User has been registered");    // 设置文本
-    }
+      qDebug() << "Attempting to register user:" << tempId;
 
-    if(flag == 1) {
-      msgBox.setText("User register successfully");    // 设置文本
-    }
+      // 检查输入是否为空
+      if(tempId.isEmpty() || tempPwd.isEmpty()) {
+          QMessageBox::warning(this, "Warning",
+                               "Username and password cannot be empty!\n\n用户名和密码不能为空！");
+          return;
+      }
 
-    msgBox.exec();
+      // 检查用户名长度
+      if(tempId.length() < 3 || tempId.length() > 20) {
+          QMessageBox::warning(this, "Warning",
+                               "Username must be 3-20 characters!\n\n用户名必须是3-20个字符！");
+          return;
+      }
 
-    idText->setText((""));
-    pwdText->setText((""));
-    //    noticePage *notice = new noticePage();
-    //    if(flag == 0) {
-    //      notice->setNotice("User has been registered");
-    //    }
+      // 检查密码长度
+      if(tempPwd.length() < 3 || tempPwd.length() > 20) {
+          QMessageBox::warning(this, "Warning",
+                               "Password must be 3-20 characters!\n\n密码必须是3-20个字符！");
+          return;
+      }
 
-    //    if(flag == 1) {
-    //      notice->setNotice("User register successfully");
-    //      //      user a;
-    //      //      a.username = tempId;
-    //      //      a.password = tempPwd;
-    //      //      a.score = 0;
-    //      //      a.rank = 0;
-    //      //      database->update(a);
-    //      //      database->setGamer(a);
-    //    }
+      // 注册前先显示等待消息
+      QMessageBox::information(this, "Info", "Registering, please wait...\n\n注册中，请稍候...");
 
-    //    notice->show();
+      // 调用注册函数
+      bool result = client->registerNewUser(tempId, tempPwd);
+      qDebug() << "Register function returned:" << result;
 
+      // 等待更长时间获取响应
+      QTime dieTime = QTime::currentTime().addMSecs(3000);
+      while(QTime::currentTime() < dieTime && client->registerFlag == -1) {
+          QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+      }
+
+      qDebug() << "Register flag after waiting:" << client->registerFlag;
+
+      // 创建消息框
+      QMessageBox msgBox(this);
+      msgBox.setWindowTitle("Registration Result");
+      msgBox.setTextFormat(Qt::RichText);
+      msgBox.setStyleSheet("QLabel{min-width: 500px; min-height: 150px; font-size: 20px;} QPushButton{width: 120px; height: 50px; font-size: 18px;}");
+
+      if(client->registerFlag == 0) {
+          msgBox.setText("<font size='5' color='red'>✗ Registration Failed!</font><br><br>"
+                         "<font size='4'>User already exists.</font><br><br>"
+                         "<font size='4'>用户名已被注册。</font>");
+          msgBox.setIcon(QMessageBox::Warning);
+      }
+      else if(client->registerFlag == 1) {
+          msgBox.setText("<font size='5' color='green'>✓ Registration Successful!</font><br><br>"
+                         "<font size='4'>User registered successfully.</font><br><br>"
+                         "<font size='4'>注册成功！</font>");
+          msgBox.setIcon(QMessageBox::Information);
+      }
+      else if(client->registerFlag == -1) {
+          msgBox.setText("<font size='5' color='orange'>⚠ Timeout Error!</font><br><br>"
+                         "<font size='4'>No response from server.</font><br><br>"
+                         "<font size='4'>服务器无响应，请检查：</font><br>"
+                         "<font size='4'>1. 服务端是否运行</font><br>"
+                         "<font size='4'>2. 网络连接</font>");
+          msgBox.setIcon(QMessageBox::Critical);
+      }
+      else {
+          msgBox.setText("<font size='5' color='red'>❌ Unknown Error!</font><br><br>"
+                         "<font size='4'>Error code: " + QString::number(client->registerFlag) + "</font><br><br>"
+                                                                   "<font size='4'>未知错误，错误代码：" + QString::number(client->registerFlag) + "</font>");
+          msgBox.setIcon(QMessageBox::Critical);
+      }
+
+      msgBox.exec();
+
+      // 重置标志
+      client->registerFlag = -1;
+
+      idText->setText((""));
+      pwdText->setText((""));
   });
 }
-
 
 //将path的图片放置到label上，自适应label大小
 void registerPage::setAdaptedImg(QString path,QLabel *label)
