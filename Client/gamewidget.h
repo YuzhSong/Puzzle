@@ -152,6 +152,7 @@ private:
     void magicCollect(int coType, int toX, int toY);
     void allFallOut();
     void reSetBoard();
+    int calculateComboScore(int rawScore, int combo);
 
     // 游戏结束处理
     void handleGameEnd();

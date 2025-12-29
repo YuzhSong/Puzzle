@@ -426,13 +426,24 @@ void GameWidget::setupScene(int i){
 
 void GameWidget::reSetBoard(){
     allFallOut();
-    QRandomGenerator::global()->fillRange(gemType[0], 64);
+    for(int i = 0; i < 8; ++i) {
+        for(int j = 0; j < 8; ++j) {
+            unsigned int type;
+            while(true) {
+                type = QRandomGenerator::global()->bounded(1, DIFFICULITY + 1);
+                bool matchH = (i >= 2 && getBaseType(gemType[i-1][j]) == type && getBaseType(gemType[i-2][j]) == type);
+                bool matchV = (j >= 2 && getBaseType(gemType[i][j-1]) == type && getBaseType(gemType[i][j-2]) == type);
+                if(!matchH && !matchV) break;
+            }
+            gemType[i][j] = type;
+        }
+    }
 
     //掉落动画
     QParallelAnimationGroup *group=new QParallelAnimationGroup;
     for(int j = 7; j >=0; --j){
         for(int i = 0; i <8 ; ++i){
-            gemType[i][j] = gemType[i][j] % static_cast<unsigned int>(DIFFICULITY) + 1;
+            // gemType[i][j] = gemType[i][j] % static_cast<unsigned int>(DIFFICULITY) + 1;
             gems[i][j] = new Gem(static_cast<int>(gemType[i][j]), 118, i, j , boardWidget);
             gems[i][j]->setAttribute(Qt::WA_TransparentForMouseEvents, true);
             group->addAnimation(startfallAnimation(gems[i][j],j+1));
@@ -564,7 +575,29 @@ void GameWidget::startGame(){
     boardWidget->show();
     boardWidget->setGeometry(665, 44, 952, 952);
 
-    QRandomGenerator::global()->fillRange(gemType[0], 64);
+    for(int i = 0; i < 8; ++i) {
+        for(int j = 0; j < 8; ++j) {
+            unsigned int type;
+            while(true) {
+                // 随机生成 1 到 DIFFICULTY 的颜色
+                type = QRandomGenerator::global()->bounded(1, DIFFICULITY + 1);
+
+                // 检查横向是否有三连 (检查左边两个)
+                bool matchH = (i >= 2 &&
+                               getBaseType(gemType[i-1][j]) == type &&
+                               getBaseType(gemType[i-2][j]) == type);
+
+                // 检查纵向是否有三连 (检查上边两个)
+                bool matchV = (j >= 2 &&
+                               getBaseType(gemType[i][j-1]) == type &&
+                               getBaseType(gemType[i][j-2]) == type);
+
+                // 如果没有三连，则该颜色合法
+                if(!matchH && !matchV) break;
+            }
+            gemType[i][j] = type;
+        }
+    }
 
     //掉落动画
     QParallelAnimationGroup *group=new QParallelAnimationGroup;
@@ -578,7 +611,7 @@ void GameWidget::startGame(){
         }
     }
     group->start();
-    eliminateTimes=0;
+    eliminateTimes=0; // 初始化连击数
 
     connect(group, &QParallelAnimationGroup::finished, [=] {
         scoreTextLbl->setText("0");
@@ -587,6 +620,7 @@ void GameWidget::startGame(){
                 return;
             Point p=tipsdetect();
             if(p.x==-1&&p.y==-1){
+                // 死局检测
                 Sleep(200);
                 reSetBoard();
                 return;
@@ -597,17 +631,20 @@ void GameWidget::startGame(){
             scoreTextLbl->setText(QString::number(score));
             forbidAll(false);
             is_acting=false;
-            int s = updateBombList();
-            score+=s;
-            if(s!=0){
+            // 连击与分数逻辑
+            int rawScore = updateBombList();
+            if(rawScore != 0){
                 Sleep(100);
-                forbidAll(true);//禁用
+                forbidAll(true);
                 is_acting=true;
+                eliminateTimes++; // 增加连击数
+                // 应用连击倍率
+                int finalScore = calculateComboScore(rawScore, eliminateTimes);
+                score += finalScore;
                 eliminateBoard();
-                eliminateTimes++;
                 exitMagic=false;
             }else{
-                eliminateTimes=0;
+                eliminateTimes=0; // 连击中断
             }
             playSound(eliminateTimes);
         });
@@ -626,7 +663,6 @@ void GameWidget::startGame(){
             eliminateTimes=0;
         }
         playSound(eliminateTimes);
-
         delete group;
     });
     connect(this,&GameWidget::finishCount,this,&GameWidget::finishAct);
@@ -657,27 +693,29 @@ void GameWidget::allFallOut(){
 }
 
 void GameWidget::finishAct() {
-    qDebug() << "finishAct called, FTime=" << FTime;
-
     if (FTime == 2) {
         FTime = 0;
-
-        // 检查是否还有消除
         bombList.clear();
-        int s = updateBombList();
-        score += s;
+        int rawScore = updateBombList(); // 获取基础分
 
-        if (s != 0) {
-            // 还有消除，继续消除
-            qDebug() << "More matches found, continuing elimination";
+        if (rawScore != 0) {
+            // 还有消除，继续消除，连击数+1
+            eliminateTimes++;
+
+            // 计算连击加成后的分数
+            int finalScore = calculateComboScore(rawScore, eliminateTimes);
+            score += finalScore;
+            scoreTextLbl->setText(QString::number(score));
+
+            qDebug() << "Cascade match found! Combo:" << eliminateTimes << " Score added:" << finalScore;
+
             forbidAll(true);
             is_acting = true;
-            eliminateTimes++;
             eliminateBoard();
             playSound(eliminateTimes);
         } else {
-            // 没有更多消除了，恢复游戏
-            qDebug() << "No more matches, restoring game";
+            // 没有更多消除了，连击结束（eliminateTimes 将在下一次消除开始前在 mouseClicked 或 eliminateFinished 中被重置）
+            qDebug() << "No more matches";
             is_acting = false;
             forbidAll(false);
             emit eliminateFinished();
@@ -1267,7 +1305,6 @@ void GameWidget::fill(){
 // 修改 generateMagic 函数，让它只处理动画，不处理掉落逻辑
 void GameWidget::generateMagic(int cX, int cY, int type, int time) {
     std::vector<Gem*> tempList;
-
     if (time == 1) {
         tempList = bombsToMakeMagic1;
         bombsToMakeMagic1.clear();
@@ -1276,198 +1313,100 @@ void GameWidget::generateMagic(int cX, int cY, int type, int time) {
         bombsToMakeMagic2.clear();
     }
 
-    qDebug() << "generateMagic called at (" << cX << "," << cY << ") type=" << type << " with " << tempList.size() << " gems";
+    // 动画组
+    QParallelAnimationGroup* gather = new QParallelAnimationGroup;
 
-    if (type == -1) {
-        fallNum = fallCount = 0;
-        FTime++;
-        finishCount();
-        return;
+    // 确保中心点不参与“移动向中心”的动画，因为它要变成新的宝石
+    for (Gem* gem : tempList) {
+        if (gem && (gem->x != cX || gem->y != cY)) {
+            QPropertyAnimation* anim = new QPropertyAnimation(gem, "geometry", boardWidget);
+            anim->setDuration(300);
+            anim->setStartValue(gem->geometry());
+            anim->setEndValue(gems[cX][cY]->geometry());
+            anim->setEasingCurve(QEasingCurve::InBack); // 改用 InBack 更有聚合感
+            gather->addAnimation(anim);
+        }
     }
 
-    if (type == 0) {
-        // 普通三消动画
-        int r = 10;
+    gather->start();
 
-        QParallelAnimationGroup* biggerGroup = new QParallelAnimationGroup;
-        for (unsigned int i = 0; i < tempList.size(); i++) {
-            if (tempList[i]) {
-                QPropertyAnimation *anim = new QPropertyAnimation(tempList[i], "geometry", boardWidget);
-                anim->setDuration(250);
-                anim->setStartValue(QRect(tempList[i]->geometry()));
-                anim->setEndValue(QRect(tempList[i]->geometry().x()-r, tempList[i]->geometry().y()-r, LEN+2*r, LEN+2*r));
-                anim->setEasingCurve(QEasingCurve::OutQuad);
-                biggerGroup->addAnimation(anim);
-            }
-        }
-        biggerGroup->start();
+    connect(gather, &QParallelAnimationGroup::finished, [=] {
+        delete gather;
 
-        connect(biggerGroup, &QParallelAnimationGroup::finished, [=]{
-            delete biggerGroup;
-            QParallelAnimationGroup* smallerGroup = new QParallelAnimationGroup;
-            for (unsigned int i = 0; i < tempList.size(); i++) {
-                if (tempList[i]) {
-                    QPropertyAnimation *anim = new QPropertyAnimation(tempList[i], "geometry", boardWidget);
-                    anim->setDuration(200);
-                    anim->setStartValue(QRect(tempList[i]->geometry()));
-                    anim->setEndValue(QRect(tempList[i]->geometry().x()+r+LEN/2-1, tempList[i]->geometry().y()+r+LEN/2-1, 2, 2));
-                    anim->setEasingCurve(QEasingCurve::InQuad);
-                    smallerGroup->addAnimation(anim);
-                }
-            }
-            smallerGroup->start();
-
-            connect(smallerGroup, &QParallelAnimationGroup::finished, [=]{
-                delete smallerGroup;
-
-                // 消除宝石
-                for (unsigned int i = 0; i < tempList.size(); i++) {
-                    if (tempList[i]) {
-                        int x = tempList[i]->x;
-                        int y = tempList[i]->y;
-                        tempList[i]->bomb();
-                        gems[x][y] = nullptr;
-                        gemType[x][y] = 100;
-                    }
-                }
-
-                // 重新计算掉落
-                fallNum = fallCount = 0;
-                FTime++;
-                finishCount();
-            });
-        });
-
-    } else if (type == BOMB_GEM_TYPE || type == CROSS_GEM_TYPE || type == UNIVERSAL_GEM_TYPE) {
-        // 特殊消除动画
-        qDebug() << "Starting special gem animation for type: " << type;
-
-        QParallelAnimationGroup* gather = new QParallelAnimationGroup;
-        for (unsigned int i = 0; i < tempList.size(); i++) {
-            if (tempList[i]) {
-                QPropertyAnimation* anim = new QPropertyAnimation(tempList[i], "geometry", boardWidget);
-                anim->setDuration(280);
-                anim->setStartValue(tempList[i]->geometry());
-                anim->setEndValue(gems[cX][cY]->geometry());
-                anim->setEasingCurve(QEasingCurve::Linear);
-                gather->addAnimation(anim);
-            }
-        }
-        gather->start();
-
-        connect(gather, &QParallelAnimationGroup::finished, [=] {
-            qDebug() << "Special gem animation finished";
-            delete gather;
-
-            // 消除周围的宝石
-            for (unsigned int i = 0; i < tempList.size(); i++) {
-                if (tempList[i]) {
-                    int x = tempList[i]->x;
-                    int y = tempList[i]->y;
-                    tempList[i]->bomb();
-                    gems[x][y] = nullptr;
-                    gemType[x][y] = 100;
-                }
-            }
-
-            // 确保中心宝石存在
-            if (!gems[cX][cY]) {
-                qDebug() << "Error: Center gem is null!";
-                fallNum = fallCount = 0;
-                FTime++;
-                finishCount();
-                return;
-            }
-
-            // 获取原始宝石的基础颜色
+        // 1. 设置生成的特殊宝石数据
+        if (gems[cX][cY]) {
+            // 获取原基础色
             unsigned int baseColor = getBaseType(gemType[cX][cY]);
-            if (baseColor < 1 || baseColor > 7) {
-                baseColor = 1; // 默认值
-            }
+            if (baseColor > 7 || baseColor < 1) baseColor = 1;
 
-            qDebug() << "Creating special gem: baseColor=" << baseColor << ", specialType=" << type;
-
-            // 设置特殊宝石属性
             if (type == UNIVERSAL_GEM_TYPE) {
-                // 万能宝石
-                gemType[cX][cY] = 0;  // 类型设为0
+                gemType[cX][cY] = 0; // 万能球类型为0
                 gems[cX][cY]->type = 0;
                 gems[cX][cY]->specialType = UNIVERSAL_GEM_TYPE;
+                // 万能球通常是独特的图片，不依赖baseColor
                 gems[cX][cY]->setStyleSheet(QString("QPushButton{border-image:url(%1);}").arg(gems[cX][cY]->path_stable[0]));
             } else {
-                // 爆炸宝石或十字消宝石
                 gemType[cX][cY] = SPECIAL_MASK + baseColor;
                 gems[cX][cY]->type = static_cast<int>(SPECIAL_MASK + baseColor);
                 gems[cX][cY]->specialType = type;
                 gems[cX][cY]->setStyleSheet(QString("QPushButton{border-image:url(%1);}").arg(gems[cX][cY]->path_stable[baseColor]));
             }
 
-            // 更新特殊边框
-            if (gems[cX][cY]->specialBorder) {
-                delete gems[cX][cY]->specialBorder;
-                gems[cX][cY]->specialBorder = nullptr;
+            // 添加边框特效
+            if (gems[cX][cY]->specialBorder) delete gems[cX][cY]->specialBorder;
+            gems[cX][cY]->specialBorder = new QLabel(gems[cX][cY]);
+            gems[cX][cY]->specialBorder->setGeometry(0,0,LEN,LEN);
+            gems[cX][cY]->specialBorder->setStyleSheet(getSpecialBorderStyle(type));
+            gems[cX][cY]->specialBorder->show();
+        }
+
+        // 2. 清理被合并的宝石 (将它们变成空位 100)
+        // 注意：不要删除中心点 (cX, cY)
+        for (Gem* gem : tempList) {
+            if (gem && (gem->x != cX || gem->y != cY)) {
+                int gx = gem->x;
+                int gy = gem->y;
+                gem->bomb(); // 删除对象
+                gems[gx][gy] = nullptr;
+                gemType[gx][gy] = 100; // 标记为空位
             }
+        }
 
-            QLabel* specialBorder = new QLabel(gems[cX][cY]);
-            specialBorder->setGeometry(0, 0, LEN, LEN);
-            specialBorder->setAttribute(Qt::WA_TransparentForMouseEvents);
+        // 3. 计算掉落列 (tHeight)
+        // 重置 tHeight
+        for(int i=0; i<8; i++)
+            for(int j=0; j<8; j++)
+                tHeight[i][j] = 0;
 
-            QString borderStyle;
-            switch (type) {
-            case BOMB_GEM_TYPE:
-                borderStyle = "border: 5px solid rgba(0, 0, 255, 200); background-color: rgba(0, 0, 255, 30);";
-                break;
-            case CROSS_GEM_TYPE:
-                borderStyle = "border: 5px solid rgba(255, 0, 0, 200); background-color: rgba(255, 0, 0, 30);";
-                break;
-            case UNIVERSAL_GEM_TYPE:
-                borderStyle = "border: 5px solid rgba(255, 255, 255, 200); background-color: rgba(255, 255, 255, 30);";
-                break;
-            }
-
-            specialBorder->setStyleSheet(borderStyle);
-            specialBorder->show();
-            gems[cX][cY]->specialBorder = specialBorder;
-
-            qDebug() << "Special gem created at (" << cX << "," << cY
-                     << "): gemType=" << gemType[cX][cY]
-                     << ", gem->type=" << gems[cX][cY]->type
-                     << ", specialType=" << gems[cX][cY]->specialType;
-
-            // 重新计算掉落高度数组
-            for (int i = 0; i < 8; ++i) {
-                for (int j = 0; j < 8; ++j) {
-                    tHeight[i][j] = 0;
-                    if (gemType[i][j] == 100) {
-                        tHeight[i][j] = -1; // 标记为消除位置
-                    }
+        // 标记空位
+        for(int i=0; i<8; i++) {
+            for(int j=0; j<8; j++) {
+                if(gemType[i][j] == 100) {
+                    tHeight[i][j] = -1;
                 }
             }
+        }
 
-            // 特殊宝石位置不是空位
-            tHeight[cX][cY] = 0;
-
-            // 计算掉落高度
-            for (int i = 0; i < 8; ++i) {
-                for (int j = 0; j < 8; ++j) {
-                    if (tHeight[i][j] == -1) {
-                        // 这个位置被消除，上方的宝石需要掉落
-                        for (int k = j - 1; k >= 0; --k) {
-                            if (tHeight[i][k] != -1 && gemType[i][k] != 100) {
-                                tHeight[i][k]++; // 增加掉落高度
-                            }
+        // 计算每一列上方宝石需要下落的格数
+        for(int i=0; i<8; i++) {
+            for(int j=0; j<8; j++) {
+                if(tHeight[i][j] == -1) { // 如果当前是空位
+                    // 其上方的所有非空宝石掉落数 +1
+                    for(int k=j-1; k>=0; k--) {
+                        if(tHeight[i][k] != -1) {
+                            tHeight[i][k]++;
                         }
                     }
                 }
             }
+        }
 
-            qDebug() << "Starting magicFall and magicFill after special gem creation";
-
-            // 触发掉落和填充
-            magicFall();
-            magicFill();
-        });
-    }
+        // 4. 触发掉落和填充
+        // 关键：必须确保 magicFall/Fill 执行完毕后会重置 is_acting
+        magicFall();
+        is_acting = false;
+        forbidAll(false);
+    });
 }
 
 // 辅助函数：根据特殊类型返回边框样式
@@ -1959,9 +1898,7 @@ Point GameWidget::tipsdetect(){
 }
 
 void GameWidget::eliminateBoard() {
-    if (gameOver)
-        return;
-
+    if (gameOver) return;
     is_acting = true;
 
     if (bombList.empty()) {
@@ -1970,66 +1907,121 @@ void GameWidget::eliminateBoard() {
         return;
     }
 
-    // 检查是否有特殊宝石需要特殊处理
-    std::vector<Gem*> specialGems;
-    std::vector<Gem*> normalGems;
+    // 使用索引遍历，允许循环中添加新元素
+    for (size_t i = 0; i < bombList.size(); ++i) {
+        Gem* currentGem = bombList[i];
+        if (!currentGem) continue;
 
-    for (Gem* gem : bombList) {
-        if (gem && gem->specialType > 0) {
-            specialGems.push_back(gem);
-        } else {
-            normalGems.push_back(gem);
-        }
-    }
+        int x = currentGem->x;
+        int y = currentGem->y;
+        int sType = currentGem->specialType;
+        int uType = currentGem->type; // 用于判断万能球
 
-    // 先处理特殊宝石的特殊效果
-    if (!specialGems.empty()) {
-        for (Gem* gem : specialGems) {
-            int x = gem->x;
-            int y = gem->y;
-            int specialType = gem->specialType;
+        std::vector<Gem*> affectedGems;
 
-            qDebug() << "Processing special gem at (" << x << "," << y << ") type=" << specialType;
+        // --- 万能球处理逻辑 ---
+        if (sType == UNIVERSAL_GEM_TYPE || uType == 0) {
+            int targetColor = -1;
 
-            switch (specialType) {
-            case BOMB_GEM_TYPE: // 爆炸宝石
-                // 爆炸范围：3x3
-                for (int i = x - 1; i <= x + 1; i++) {
-                    for (int j = y - 1; j <= y + 1; j++) {
-                        if (i >= 0 && i < 8 && j >= 0 && j < 8 && gems[i][j]) {
-                            if (gems[i][j] != gem) { // 不重复添加自己
-                                bombList.push_back(gems[i][j]);
-                            }
+            // 1. 尝试从消除列表中寻找邻居颜色 (连击消除的情况)
+            // 比如 蓝-蓝-万能球，万能球应该消除蓝色
+            for (Gem* neighbor : bombList) {
+                if (neighbor && neighbor != currentGem) {
+                    // 检查是否相邻
+                    if (abs(neighbor->x - x) + abs(neighbor->y - y) == 1) {
+                        int nbType = getBaseType(gemType[neighbor->x][neighbor->y]);
+                        if (nbType != 0 && nbType != 100) {
+                            targetColor = nbType;
+                            break;
                         }
                     }
                 }
-                break;
+            }
 
-            case CROSS_GEM_TYPE: // 十字消宝石
-                // 消除整行和整列
-                for (int i = 0; i < 8; i++) {
-                    if (gems[i][y] && gems[i][y] != gem) {
-                        bombList.push_back(gems[i][y]);
+            // 2. 如果没找到（可能是被炸弹炸到的），寻找触发它的源头颜色
+            // 这是一个简化处理：如果万能球被动触发且没有相邻连击色，
+            // 我们检查它四周是否有正在消除的道具，取那个道具的颜色
+            if (targetColor == -1) {
+                // 遍历四周寻找有没有正在爆炸的非万能球宝石
+                // (此处简化逻辑：如果被动触发，通常是被附近的炸弹波及)
+                // 我们可以随机选一个有效颜色，或者尝试寻找最近的非空颜色
+                // 按照你的要求："如果是道具炸毁的万能球，则使用道具的颜色"
+                // 由于 currentGem 没有存储 "谁炸了我"，我们需要在遍历bombList时稍微向前回溯一下
+
+                // 倒序查找 bombList 中在当前 gem 之前的元素，看谁在攻击范围内
+                for (int k = i - 1; k >= 0; k--) {
+                    Gem* bomber = bombList[k];
+                    if (bomber && bomber->specialType == BOMB_GEM_TYPE) {
+                        // 检查 bomber 是否覆盖了 currentGem
+                        if (abs(bomber->x - x) <= 1 && abs(bomber->y - y) <= 1) {
+                            targetColor = getBaseType(gemType[bomber->x][bomber->y]);
+                            break;
+                        }
+                    }
+                    if (bomber && bomber->specialType == CROSS_GEM_TYPE) {
+                        if (bomber->x == x || bomber->y == y) {
+                            targetColor = getBaseType(gemType[bomber->x][bomber->y]);
+                            break;
+                        }
                     }
                 }
-                for (int j = 0; j < 8; j++) {
-                    if (gems[x][j] && gems[x][j] != gem) {
-                        bombList.push_back(gems[x][j]);
+            }
+
+            // 3. 如果还是没找到颜色（极其罕见），随机选一个或默认选1
+            if (targetColor == -1 || targetColor == 0) targetColor = QRandomGenerator::global()->bounded(1, 8);
+
+            qDebug() << "Universal Gem Activated! Target Color:" << targetColor;
+
+            // 消除全屏该颜色的宝石
+            for (int r = 0; r < 8; r++) {
+                for (int c = 0; c < 8; c++) {
+                    if (gems[r][c] && getBaseType(gemType[r][c]) == static_cast<unsigned int>(targetColor)) {
+                        affectedGems.push_back(gems[r][c]);
                     }
                 }
-                break;
-
-            case UNIVERSAL_GEM_TYPE: // 万能宝石
-                // 万能宝石在匹配时已经发挥了作用，这里不需要额外处理
-                break;
+            }
+        }
+        // --- 炸弹处理逻辑 ---
+        else if (sType == BOMB_GEM_TYPE) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    int nx = x + dx, ny = y + dy;
+                    if (nx >= 0 && nx < 8 && ny >= 0 && ny < 8 && gems[nx][ny]) {
+                        affectedGems.push_back(gems[nx][ny]);
+                    }
+                }
+            }
+        }
+        // --- 闪电/十字消处理逻辑 ---
+        else if (sType == CROSS_GEM_TYPE) {
+            for (int k = 0; k < 8; k++) {
+                if (gems[k][y]) affectedGems.push_back(gems[k][y]); // 整行
+                if (gems[x][k]) affectedGems.push_back(gems[x][k]); // 整列
             }
         }
 
-        // 移除重复的宝石
-        std::sort(bombList.begin(), bombList.end());
-        bombList.erase(std::unique(bombList.begin(), bombList.end()), bombList.end());
-    }
+        // --- 将受影响的宝石加入列表 (去重) ---
+        for (Gem* target : affectedGems) {
+            if (target == currentGem) continue;
 
+            // 检查是否已经在列表中
+            bool exists = false;
+            for (const auto& existing : bombList) {
+                if (existing == target) {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists) {
+                bombList.push_back(target);
+                // 连锁消除加分
+                int extraScore = 20;
+                score += calculateComboScore(extraScore, eliminateTimes);
+                scoreTextLbl->setText(QString::number(score));
+            }
+        }
+    }
     // 第一步：重置掉落高度数组
     for (int i = 0; i < 8; ++i)
         for (int j = 0; j < 8; ++j)
@@ -2272,135 +2264,99 @@ bool GameWidget::checkSpecialGemCondition(int cX, int cY, int& specialType, std:
     adjacentGems.clear();
     specialType = -1;
 
-    // 确保坐标有效且有宝石
-    if (cX < 0 || cX >= 8 || cY < 0 || cY >= 8 || !gems[cX][cY]) {
-        return false;
-    }
+    if (cX < 0 || cX >= 8 || cY < 0 || cY >= 8 || !gems[cX][cY]) return false;
 
     unsigned int baseColor = getBaseType(gemType[cX][cY]);
-    if (baseColor == 0 || baseColor == 100 || baseColor > 7) {
-        return false;
-    }
+    if (baseColor == 0 || baseColor == 100 || baseColor > 7) return false;
 
-    qDebug() << "Checking special condition at (" << cX << "," << cY << ") baseColor=" << baseColor;
-
-    // 检测4个方向的连续相同颜色宝石
+    // 1. 统计四个方向的连续宝石数量
     int left = 0, right = 0, up = 0, down = 0;
 
     // 向左
     for (int i = cX - 1; i >= 0; i--) {
-        if (getBaseType(gemType[i][cY]) == baseColor) {
-            left++;
-            adjacentGems.push_back(gems[i][cY]);
-        } else {
-            break;
-        }
+        if (getBaseType(gemType[i][cY]) == baseColor) left++;
+        else break;
     }
-
     // 向右
     for (int i = cX + 1; i < 8; i++) {
-        if (getBaseType(gemType[i][cY]) == baseColor) {
-            right++;
-            adjacentGems.push_back(gems[i][cY]);
-        } else {
-            break;
-        }
+        if (getBaseType(gemType[i][cY]) == baseColor) right++;
+        else break;
     }
-
-    int horizontalTotal = left + right + 1;
-
-    // 清空，重新检测垂直方向
-    adjacentGems.clear();
-
     // 向上
     for (int j = cY - 1; j >= 0; j--) {
-        if (getBaseType(gemType[cX][j]) == baseColor) {
-            up++;
-            adjacentGems.push_back(gems[cX][j]);
-        } else {
-            break;
-        }
+        if (getBaseType(gemType[cX][j]) == baseColor) up++;
+        else break;
     }
-
     // 向下
     for (int j = cY + 1; j < 8; j++) {
-        if (getBaseType(gemType[cX][j]) == baseColor) {
-            down++;
-            adjacentGems.push_back(gems[cX][j]);
-        } else {
-            break;
+        if (getBaseType(gemType[cX][j]) == baseColor) down++;
+        else break;
+    }
+
+    int hTotal = left + right + 1; // 水平总数
+    int vTotal = up + down + 1;    // 垂直总数
+
+    // 2. 收集涉及的宝石
+    // 只有构成消除条件的才加入 (比如水平只有2个就不加入)
+    if (hTotal >= 3) {
+        for (int i = cX - left; i <= cX + right; i++) {
+            if (i != cX && gems[i][cY]) adjacentGems.push_back(gems[i][cY]);
+        }
+    }
+    if (vTotal >= 3) {
+        for (int j = cY - up; j <= cY + down; j++) {
+            if (j != cY && gems[cX][j]) adjacentGems.push_back(gems[cX][j]);
         }
     }
 
-    int verticalTotal = up + down + 1;
+    // 3. 判定逻辑 (优先级：5连 > T/L型 > 4连 > 3连)
 
-    // 重新收集所有相邻宝石
-    adjacentGems.clear();
-
-    // 收集水平方向
-    for (int i = cX - left; i <= cX + right; i++) {
-        if (i != cX && gems[i][cY]) {
-            adjacentGems.push_back(gems[i][cY]);
-        }
-    }
-
-    // 收集垂直方向
-    for (int j = cY - up; j <= cY + down; j++) {
-        if (j != cY && gems[cX][j]) {
-            adjacentGems.push_back(gems[cX][j]);
-        }
-    }
-
-    qDebug() << "Horizontal total: " << horizontalTotal << ", Vertical total: " << verticalTotal;
-
-    // 检查5连直线（十字消宝石）
-    if (horizontalTotal == 5 || verticalTotal == 5) {
-        specialType = CROSS_GEM_TYPE;
-        qDebug() << "Found cross gem condition";
+    // --- 情况A: 5连 (生成闪电/十字消) ---
+    // 规则：任意方向达到5个
+    if (hTotal >= 5 || vTotal >= 5) {
+        specialType = CROSS_GEM_TYPE; // 闪电
+        qDebug() << "Condition Met: 5-Line -> Lightning/Cross";
         return true;
     }
 
-    // 检查T型或L型
-    if ((horizontalTotal >= 3 && verticalTotal >= 2) ||
-        (verticalTotal >= 3 && horizontalTotal >= 2)) {
-        // 可能是T型或L型
+    // --- 情况B: 双向消除 (T型 或 L型) ---
+    if (hTotal >= 3 && vTotal >= 3) {
+        // 判断 T型 还是 L型
+        // T型特征：交叉点在某一行的中间 (两侧都有宝石)
+        // L型特征：交叉点在某一行的末端 (只有一侧有宝石)
 
-        // 收集对角线上的相同颜色宝石
-        if (cX > 0 && cY > 0 && getBaseType(gemType[cX-1][cY-1]) == baseColor) {
-            adjacentGems.push_back(gems[cX-1][cY-1]);
-        }
-        if (cX < 7 && cY > 0 && getBaseType(gemType[cX+1][cY-1]) == baseColor) {
-            adjacentGems.push_back(gems[cX+1][cY-1]);
-        }
-        if (cX > 0 && cY < 7 && getBaseType(gemType[cX-1][cY+1]) == baseColor) {
-            adjacentGems.push_back(gems[cX-1][cY+1]);
-        }
-        if (cX < 7 && cY < 7 && getBaseType(gemType[cX+1][cY+1]) == baseColor) {
-            adjacentGems.push_back(gems[cX+1][cY+1]);
-        }
+        bool hMiddle = (left > 0 && right > 0); // 水平在中间
+        bool vMiddle = (up > 0 && down > 0);    // 垂直在中间
 
-        int totalGems = 1 + adjacentGems.size();
-
-        // T型：一个方向有3个或以上，另一个方向有2个或以上
-        if ((horizontalTotal >= 3 && verticalTotal >= 2) ||
-            (verticalTotal >= 3 && horizontalTotal >= 2)) {
-            if (totalGems >= 4) {
-                specialType = BOMB_GEM_TYPE; // T型生成爆炸宝石
-                qDebug() << "Found bomb gem (T-shape) condition";
-                return true;
-            }
+        if (hMiddle || vMiddle) {
+            // 只要有一个方向是在中间，就是 T型 (生成炸弹)
+            specialType = BOMB_GEM_TYPE;
+            qDebug() << "Condition Met: T-Shape -> Bomb";
+        } else {
+            // 两个方向都在末端，就是 L型 (生成万能球)
+            specialType = UNIVERSAL_GEM_TYPE;
+            qDebug() << "Condition Met: L-Shape -> Universal";
         }
+        return true;
+    }
+    return false;
+}
 
-        // L型：两个方向都至少有2个宝石
-        if (horizontalTotal >= 2 && verticalTotal >= 2) {
-            if (totalGems >= 4) {
-                specialType = UNIVERSAL_GEM_TYPE; // L型生成万能宝石
-                qDebug() << "Found universal gem (L-shape) condition";
-                return true;
-            }
-        }
+// 连击分数计算策略
+int GameWidget::calculateComboScore(int rawScore, int combo) {
+    double multiplier = 1.0;
+
+    // 自定义非线性倍率
+    switch (combo) {
+    case 0: // 第一次消除
+    case 1: multiplier = 1.0; break;
+    case 2: multiplier = 1.5; break; // 2连
+    case 3: multiplier = 2.5; break; // 3连，倍率提升
+    case 4: multiplier = 4.0; break; // 4连，大幅提升
+    case 5: multiplier = 6.0; break; // 5连
+    default: multiplier = 6.0; break; // 5连以上按5连算
     }
 
-    qDebug() << "No special condition found";
-    return false;
+    qDebug() << "Combo:" << combo << " Multiplier:" << multiplier << " Raw:" << rawScore;
+    return static_cast<int>(rawScore * multiplier);
 }
