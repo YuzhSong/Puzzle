@@ -27,7 +27,7 @@ selectlevel::selectlevel(QWidget *parent) :
     DoneL->setParent(this);
     DoneL->setVisible(true);
 
-    QFont font ( "Arial Black", 12, 87);
+    QFont font ( "Smiley Sans", 16, 87);
     levelL->setFont(font);
     level1L->setFont(font);
     level2L->setFont(font);

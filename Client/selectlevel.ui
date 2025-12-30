@@ -14,6 +14,13 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>16</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
    <widget class="QPushButton" name="DoneB">
     <property name="geometry">
      <rect>
@@ -24,7 +31,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);</string>
+     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);
+font: oblique 16pt &quot;Smiley Sans&quot;;</string>
     </property>
     <property name="text">
      <string/>
@@ -40,7 +48,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);</string>
+     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);
+font: oblique 16pt &quot;Smiley Sans&quot;;</string>
     </property>
     <property name="text">
      <string/>
@@ -56,7 +65,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);</string>
+     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);
+font: oblique 16pt &quot;Smiley Sans&quot;;</string>
     </property>
     <property name="text">
      <string/>
@@ -72,7 +82,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);</string>
+     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);
+font: oblique 16pt &quot;Smiley Sans&quot;;</string>
     </property>
     <property name="text">
      <string/>
@@ -88,7 +99,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">border-image: url(:/picture/Settingpage/dialogtitle.png);</string>
+     <string notr="true">border-image: url(:/picture/Settingpage/dialogtitle.png);
+font: oblique 16pt &quot;Smiley Sans&quot;;</string>
     </property>
     <property name="text">
      <string/>
@@ -101,8 +113,15 @@
      <x>0</x>
      <y>0</y>
      <width>574</width>
-     <height>23</height>
+     <height>30</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>16</pointsize>
+     <italic>true</italic>
+    </font>
    </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

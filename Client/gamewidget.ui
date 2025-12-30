@@ -25,6 +25,13 @@
      <height>1080</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
    <property name="text">
     <string>BK</string>
    </property>
@@ -37,6 +44,13 @@
      <width>1055</width>
      <height>1078</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
    </property>
    <property name="text">
     <string>TextLabel</string>
@@ -51,6 +65,13 @@
      <height>178</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
    <property name="text">
     <string>TextLabel</string>
    </property>
@@ -63,6 +84,13 @@
      <width>158</width>
      <height>122</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -80,6 +108,13 @@
      <height>272</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
    <property name="styleSheet">
     <string notr="true"/>
    </property>
@@ -96,6 +131,13 @@
      <height>116</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
+   </property>
    <property name="styleSheet">
     <string notr="true"/>
    </property>
@@ -111,6 +153,13 @@
      <width>121</width>
      <height>61</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>14</pointsize>
+     <italic>true</italic>
+    </font>
    </property>
    <property name="styleSheet">
     <string notr="true">border-image: url(:/picture/Settingpage/dialogbutton.png);</string>

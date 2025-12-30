@@ -46,6 +46,14 @@ StartPage::StartPage(QWidget *parent) :
     QParallelAnimationGroup *group = new QParallelAnimationGroup;
     group->addAnimation(ShowBackground());
     SetButton();
+    QFont font ( "Smiley Sans", 16, 87);
+    startButton->setFont(font);
+    recordButton->setFont(font);
+    loginButton->setFont(font);
+    settingButton->setFont(font);
+    registerButton->setFont(font);
+    logoutButton->setFont(font);
+
     startButton->showContent("Start",40);
     recordButton->showContent("Record",20);
     settingButton->showContent("Setting",20);
@@ -73,7 +81,7 @@ StartPage::~StartPage()
 QPropertyAnimation * StartPage::ShowTitle(){
     QPixmap pix;
     QLabel *title = new QLabel(this);
-    title->setGeometry(this->width()/2-903/2,-title->height(),903,200);
+    title->setGeometry(this->width()/2-903/2,-title->height(),903,500);
     setAdaptedImg(":/picture/StartPage/title.png",title);
     title->show();
     QPropertyAnimation *animation = new QPropertyAnimation(title, "geometry",this);
@@ -139,6 +147,13 @@ void StartPage::SetButton(){
 
     //语言切换
     connect(&settingP,&settingpage::selectLan,[=](int index){
+        QFont font ( "Smiley Sans", 16, 87);
+        startButton->setFont(font);
+        recordButton->setFont(font);
+        loginButton->setFont(font);
+        settingButton->setFont(font);
+        registerButton->setFont(font);
+        logoutButton->setFont(font);
 
         if(index==0){
             select->level1L->setText("简单");
@@ -258,16 +273,56 @@ void StartPage::setAdaptedImg(QString path,QLabel *label)
     label->setPixmap(QPixmap::fromImage(image2));//显示
 }
 //将path的图片放置到label上，自适应label大小
-void StartPage::setBkImg(QString path,QLabel *label)
+void StartPage::setBkImg(QString path, QLabel *label)
 {
+    // 加载图片
     QImage image = QImage(path);
     if(image.isNull()){
-        qDebug()<<"background:empty";
+        qDebug() << "background: image load failed: " << path;
+        return;
     }
-    double ratio=(double)image.height()/(double)image.width();
-    QImage image2=image.scaled(this->width(),ratio*this->width(),Qt::IgnoreAspectRatio);//重新调整图像大小以适应label
-    label->setPixmap(QPixmap::fromImage(image2));//显示
-    label->setGeometry(0,0,this->width(),ratio*this->width());
+
+    // 获取窗口和图片的尺寸
+    int windowWidth = this->width();
+    int windowHeight = this->height();
+    int imageWidth = image.width();
+    int imageHeight = image.height();
+
+    // 计算缩放比例（以填满窗口为目标）
+    double widthRatio = (double)windowWidth / (double)imageWidth;
+    double heightRatio = (double)windowHeight / (double)imageHeight;
+
+    // 选择较大的缩放比例，确保图片能覆盖整个窗口
+    double scaleRatio = qMax(widthRatio, heightRatio);
+
+    // 计算缩放后的尺寸
+    int scaledWidth = imageWidth * scaleRatio;
+    int scaledHeight = imageHeight * scaleRatio;
+
+    // 缩放图片（使用平滑变换）
+    QImage scaledImage = image.scaled(scaledWidth, scaledHeight,
+                                      Qt::IgnoreAspectRatio,
+                                      Qt::SmoothTransformation);
+
+    // 计算裁剪位置（使图片居中）
+    int cropX = (scaledWidth - windowWidth) / 2;
+    int cropY = (scaledHeight - windowHeight) / 2;
+
+    // 裁剪图片以适应窗口
+    QImage croppedImage = scaledImage.copy(cropX, cropY, windowWidth, windowHeight);
+
+    // 设置到label
+    label->setPixmap(QPixmap::fromImage(croppedImage));
+
+    // 设置label大小与窗口一致
+    label->setGeometry(0, 0, windowWidth, windowHeight);
+
+    // 可选：设置图片缩放模式
+    label->setScaledContents(false); // 设置为false，因为我们手动处理缩放
+
+    qDebug() << "Background set: window=" << windowWidth << "x" << windowHeight
+             << ", image=" << imageWidth << "x" << imageHeight
+             << ", scaleRatio=" << scaleRatio;
 }
 
 void StartPage::keyPressEvent(QKeyEvent *ev)
