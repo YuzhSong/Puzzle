@@ -81,7 +81,7 @@ StartPage::~StartPage()
 QPropertyAnimation * StartPage::ShowTitle(){
     QPixmap pix;
     QLabel *title = new QLabel(this);
-    title->setGeometry(this->width()/2-903/2,-title->height(),903,500);
+    title->setGeometry(this->width()/2-903/2,-title->height(),903,300);
     setAdaptedImg(":/picture/StartPage/title.png",title);
     title->show();
     QPropertyAnimation *animation = new QPropertyAnimation(title, "geometry",this);
@@ -107,7 +107,7 @@ QPropertyAnimation *  StartPage::ShowBackground(){
 
 void StartPage::SetButton(){
     startButton->setCircle(this->width()/10, this->width()/2, this->height()/2+100, this->width(), this->height(),\
-                           ":/picture/button/ball.png", "", this);
+                           ":/picture/StartPage/startbutton.png", "", this);
 
     recordButton->setCircle(this->width()/100*5, this->width()/6, this->height()/2+100, this->width(), this->height(),\
                             ":/picture/button/ball.png", "", this);

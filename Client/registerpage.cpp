@@ -34,6 +34,7 @@ registerPage::registerPage(QWidget *parent) :
 
   QFont ft;
   ft.setPointSize(25);
+  ft.setFamily("Smiley Sans");
   id->setFont(ft);
   pwd->setFont(ft);
   idText->setFont(ft);

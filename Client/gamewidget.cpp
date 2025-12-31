@@ -30,7 +30,7 @@ void GameWidget::setupScene(int i){
     scoreTextLbl=new QLabel(this);
     scoreTextLbl->setGeometry(360,130,150,50);
     scoreTextLbl->setAlignment(Qt::AlignCenter);
-    scoreTextLbl->setFont(QFont("Euclid",40,QFont::Normal));
+    scoreTextLbl->setFont(QFont("Smiley Sans",40,QFont::Normal));
     scoreTextLbl->setStyleSheet("QLabel{color:white;}");
     scoreTextLbl->setVisible(true);
 
@@ -394,7 +394,7 @@ void GameWidget::setupScene(int i){
                 pauseTXLbl->setGeometry(250,boardWidget->height()/2,440,30);
                 pauseTXLbl->setText("The Game Has Been Paused.");
                 pauseTXLbl->setAlignment(Qt::AlignCenter);
-                pauseTXLbl->setFont(QFont("BoDoni MT",25, QFont::Normal));
+                pauseTXLbl->setFont(QFont("Smiley Sans",25, QFont::Normal));
                 pauseTXLbl->setStyleSheet("QLabel{color:white;}");
                 pauseTXLbl->setVisible(true);
                 is_paused=true;
