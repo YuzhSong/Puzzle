@@ -115,17 +115,17 @@ void selectlevel::on_DoneB_released()
     QString difficultyText;
 
     switch(level) {
-    case 1:
+    case 4:
         actualDifficulty = 4;      // 简单：4种宝石
         difficultyText = "简单";   // 中文
         // difficultyText = "Easy"; // 英文
         break;
-    case 2:
+    case 6:
         actualDifficulty = 6;      // 普通：6种宝石
         difficultyText = "普通";
         // difficultyText = "Medium";
         break;
-    case 3:
+    case 7:
         actualDifficulty = 7;      // 困难：7种宝石
         difficultyText = "困难";
         // difficultyText = "Hard";

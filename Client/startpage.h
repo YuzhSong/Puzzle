@@ -43,26 +43,31 @@ public:
 
     QPropertyAnimation *bkAnim;
     settingpage settingP;
-    //volumeWidget volumeW;
     QSoundEffect* sound;
+
 protected:
     virtual void keyPressEvent(QKeyEvent *ev);
     void closeEvent(QCloseEvent *event);
+
 private:
     Ui::StartPage *ui;
     HoverButton *startButton, *recordButton, *settingButton;
-    //HoverButton *bright,*volume;
 
-    QLabel *background;
-    QPropertyAnimation *  ShowBackground();
-    QPropertyAnimation * ShowTitle();
-    void SetButton();
+    QLabel *background; // 成员变量
+
+    // 修改：将原来的 ShowBackground 拆分或修改逻辑
+    void initBackground();          // 初始化静止背景
+    QPropertyAnimation* createBkAnim(); // 创建背景动画
+    QPropertyAnimation* ShowTitle();
+
+    void SetButton();       // 设置主菜单按钮位置
     void setBkImg(QString path,QLabel *label);
     void setAdaptedImg(QString path,QLabel *label);
     void Sleep(int msec);
 
-
-
+    // 新增：界面状态控制
+    void initLoginUI();     // 显示初始登录界面
+    void enterMainMenu();   // 进入主菜单（执行动画）
 };
 
 #endif // STARTPAGE_H

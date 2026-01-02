@@ -219,35 +219,33 @@ int dataBase::loginFunc(QString tempId, QString tempPwd) {
 }
 
 int dataBase::registerFunc(QString tempId, QString tempPwd) {
-    // 先检查用户是否已存在
-    QSqlQuery sql_query;
+    // 1. 检查用户是否存在
+    QSqlQuery check_query; // 使用专门的 check 变量
     QString check_sql = "SELECT username FROM users WHERE username = ?";
-    sql_query.prepare(check_sql);
-    sql_query.addBindValue(tempId);
+    check_query.prepare(check_sql);
+    check_query.addBindValue(tempId);
 
-    if(!sql_query.exec()) {
-        qDebug() << "Error checking user:" << sql_query.lastError();
+    if(!check_query.exec()) {
+        qDebug() << "Error checking user:" << check_query.lastError().text();
         return 0;
     }
 
-    if(sql_query.next()) {
+    if(check_query.next()) {
         qDebug() << "User already exists:" << tempId;
-        return 0; // 用户已存在
-    }
-
-    // 插入新用户
-    QString insert_sql = "INSERT INTO users (username, password) VALUES (?, ?)";
-    sql_query.prepare(insert_sql);
-    sql_query.addBindValue(tempId);
-    sql_query.addBindValue(tempPwd);
-
-    if(!sql_query.exec())
-    {
-        qDebug() << "Insert error:" << sql_query.lastError();
         return 0;
     }
-    else
-    {
+
+    // 2. 插入新用户
+    QSqlQuery insert_query; // 使用全新的对象，避免之前的参数残留
+    QString insert_sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+    insert_query.prepare(insert_sql);
+    insert_query.addBindValue(tempId);
+    insert_query.addBindValue(tempPwd);
+
+    if(!insert_query.exec()) {
+        qDebug() << "Insert error:" << insert_query.lastError().text();
+        return 0;
+    } else {
         qDebug() << "User registered successfully:" << tempId;
         return 1;
     }

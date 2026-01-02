@@ -47,7 +47,7 @@ class GameWidget : public QMainWindow
     Q_OBJECT
 
 public:
-    int DIFFICULITY = 5;
+    int DIFFICULITY;
     explicit GameWidget(QWidget *parent = nullptr);
     void setAdaptedImg(QString path, QLabel *label);
     void setupScene(int i);
@@ -162,6 +162,7 @@ private:
     std::pair<Point, Point> findSwapHint();
     bool checkThreeMatch(int x1, int y1, int x2, int y2);
 
+    bool tryGenerateSpecial(int x1, int y1, int x2, int y2);
     int updateBombList();
     // 新增辅助函数
     QString getSpecialBorderStyle(int type);
