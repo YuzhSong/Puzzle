@@ -26,8 +26,7 @@
 // 特殊宝石类型
 #define BOMB_GEM_TYPE 1    // 爆炸宝石
 #define CROSS_GEM_TYPE 2   // 十字消宝石
-#define UNIVERSAL_GEM_TYPE 3  // 万能宝石
-#define COLLECT_GEM_TYPE 4    // 收集宝石
+#define TIME_GEM_TYPE 3    // 时间球宝石（原来L型生成）
 extern Client *client;
 
 class Point {
@@ -149,7 +148,6 @@ private:
     bool hasMatch(int x1, int y1, int x2, int y2);
     void generateMagic(int cX, int cY, int type, int time);
     void finishAct();
-    void magicCollect(int coType, int toX, int toY);
     void allFallOut();
     void reSetBoard();
     int calculateComboScore(int rawScore, int combo);
