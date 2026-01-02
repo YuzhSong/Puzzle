@@ -1940,7 +1940,7 @@ void GameWidget::eliminateBoard() {
         // --- 时间球处理逻辑 ---
         if (sType == TIME_GEM_TYPE) {
             // 增加10秒时间 (10000毫秒)
-            int timeBonus = 10000;
+            int timeBonus = 667;
             if (progressBar) {
                 int currentVal = progressBar->value();
                 int maxVal = progressBar->maximum();
