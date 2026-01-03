@@ -54,7 +54,7 @@ StartPage::StartPage(QWidget *parent) :
     registerButton->setFont(font);
     logoutButton->setFont(font);
 
-    startButton->showContent("Start",40);
+    startButton->showContent("",40);
     recordButton->showContent("Record",20);
     settingButton->showContent("Setting",20);
     loginButton->showContent("login",10);
@@ -195,7 +195,7 @@ void StartPage::SetButton(){
     connect(&settingP,&settingpage::selectLan,[=](int index){
 
         if(index==0){
-            startButton->showContent("开始",40);
+            startButton->showContent("",40);
             recordButton->showContent("记录",20);
             settingButton->showContent("设置",20);
             loginButton->showContent("登录",10);
@@ -204,7 +204,7 @@ void StartPage::SetButton(){
         }
 
         if(index==1){
-            startButton->showContent("Start",40);
+            startButton->showContent("",40);
             recordButton->showContent("Record",20);
             settingButton->showContent("Settings",20);
             loginButton->showContent("login",10);

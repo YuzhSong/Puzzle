@@ -72,5 +72,6 @@
         <file>picture/GameWidget/Gem/goldSQ.gif</file>
         <file>picture/GameWidget/Gem/waterSQ.gif</file>
         <file>picture/splash.jpg</file>
+        <file>picture/StartPage/startbutton.png</file>
     </qresource>
 </RCC>
