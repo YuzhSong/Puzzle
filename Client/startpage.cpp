@@ -301,7 +301,7 @@ QPropertyAnimation * StartPage::ShowTitle(){
     // 保持原样，注意不要重复new label，如果多次进入可能会重叠
     // 建议也将title改为成员变量，这里简化处理，假设只执行一次
     QLabel *title = new QLabel(this);
-    title->setGeometry(this->width()/2-903/2,-200,903,200); // 初始在屏幕外
+    title->setGeometry(this->width()/2-903/2,-400,903,400); // 初始在屏幕外
     setAdaptedImg(":/picture/StartPage/title.png",title);
     title->show();
     QPropertyAnimation *animation = new QPropertyAnimation(title, "geometry",this);
