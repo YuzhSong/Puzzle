@@ -54,7 +54,7 @@ private:
     void paintEvent(QPaintEvent *);
  //   StartPage* start=new StartPage();
 signals:
-    void selectDone(int actualDifficulty, const QString &difficultyText);
+    void selectDone(const QString &difficultyText, int gemCount);
 };
 
 #endif // SELECTLEVEL_H

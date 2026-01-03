@@ -53,7 +53,7 @@ public:
     QSoundEffect* sound;
 
     // 添加用户信息设置函数
-    void setUserInfo(QString username, int difficulty);
+    void setUserInfo(QString username, const QString &difficultyText);
 
 protected:
     virtual void keyPressEvent(QKeyEvent *ev) override;
@@ -77,7 +77,7 @@ private:
 
     // 用户信息
     QString currentUsername;
-    int currentDifficulty;
+    QString currentDifficultyText;
 
     // 提示功能相关
     bool hintBlinkState = false;

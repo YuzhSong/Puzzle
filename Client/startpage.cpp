@@ -1,9 +1,9 @@
-#include <stdio.h>
 #include <QDesktopServices>
 #include "startpage.h"
 #include "ui_startpage.h"
 #include "qmessagebox.h"
 #include "gamewidget.h"
+#include <QDebug>
 
 StartPage::StartPage(QWidget *parent) :
     QWidget(parent),
@@ -52,10 +52,25 @@ StartPage::StartPage(QWidget *parent) :
     });
 
     // 难度选择
-    connect(select,&selectlevel::selectDone,[=](int difficulty){
+    connect(select, &selectlevel::selectDone, [=](const QString &difficultyText, int gemCount){
         this->hide();
         sound->stop();
-        gameWidget->DIFFICULITY = difficulty;
+
+        // 保存难度文字和宝石种类数
+        currentDifficultyText = difficultyText;  // "简单"、"普通"、"困难"
+        currentGemCount = gemCount;              // 4,6,7
+
+        qDebug() << "Starting game - Difficulty:" << difficultyText
+                 << " Gem Count:" << gemCount;
+
+        // 设置游戏参数
+        gameWidget->DIFFICULITY = gemCount;
+
+        // 传递用户信息和难度文字
+        if (!currentUsername.isEmpty()) {
+            gameWidget->setUserInfo(currentUsername, difficultyText);
+        }
+
         gameWidget->setupScene(this->ForGameL);
         gameWidget->show();
     });
@@ -63,8 +78,8 @@ StartPage::StartPage(QWidget *parent) :
     // 语言文字更新逻辑... (保留原代码中的setText部分)
     connect(&settingP,&settingpage::selectLan,[=](int index){
         if(index==0){
-            select->level1L->setText("简单");
-            select->level2L->setText("普通");
+            select->level1L->setText("Easy");
+            select->level2L->setText("Medium");
             // ... (保留原有的语言设置逻辑)
             select->DoneL->setText("开始");
         }else{
@@ -163,11 +178,16 @@ StartPage::StartPage(QWidget *parent) :
         this->show();
         sound->setLoopCount(QSoundEffect::Infinite);
         sound->play();
+
         // 检查是否登录成功
         if(client->logined) {
-            enterMainMenu(); // 登录成功，触发动画进入主菜单
+            // 保存当前用户名
+            currentUsername = client->username;
+            qDebug() << "User logged in:" << currentUsername;
+
+            enterMainMenu();
         } else {
-            initLoginUI(); // 失败或取消，保持登录界面
+            initLoginUI();
         }
     });
 

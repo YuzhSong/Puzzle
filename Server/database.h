@@ -20,8 +20,8 @@ typedef struct {
     QString username;
     int score;
     int rank;
-    int difficulty;      // 添加难度字段
-    QDateTime play_time; // 添加时间字段
+    QString difficulty;      // 添加难度字段
+    QDateTime play_time;     // 添加时间字段
 } player;
 
 
@@ -41,12 +41,15 @@ public:
     int registerFunc(QString id, QString pwd);
 
     // 分数和排行榜相关
-    void update(QString username, int difficulty, int score);
-    void update(QString username, int score); // 保持向后兼容
+    void update(QString username, QString difficultyText, int score);
     void inquire();
-    QString showRankList();
-    QString showRankListWithDifficulty(int difficulty);
-    QString showUserRankList();
+
+    // 排行榜显示函数 - 修改接口
+    QString showRankList();  // 保留原有接口用于兼容
+    QString showRankListWithDifficulty(const QString &difficulty);  // 新的带难度参数版本
+
+    QString showUserRankList();  // 保留原有接口用于兼容
+    QString showUserRankListWithDifficulty(const QString &difficulty);  // 新的带难度参数版本
 
     // 数据获取
     vector<player> getPlayers();
@@ -56,6 +59,7 @@ public:
 
     // 比较函数
     static bool compare(player a, player b);
+    static int getDifficultyWeight(const QString &difficulty);
 
 private:
     vector<user> users;

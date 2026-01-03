@@ -234,7 +234,6 @@ void GameWidget::setupScene(int i){
                     effect = new QSoundEffect(this);
                     effect->setSource(QUrl("qrc:/music/effect/Time_Up.wav"));
                     effect->play();
-                    //client->update(score);
                 }
                 if(redBorderTimer->isActive()){
                     redBorderTimer->stop();
@@ -277,14 +276,31 @@ void GameWidget::setupScene(int i){
     });
 
     connect(menuButton, &HoverButton::clicked, [=](){
-
         if(is_acting)
             return;
 
         // 清除提示高亮
         clearHintHighlight();
 
-        client->update(score);
+        // 检查是否有用户登录
+        if (currentUsername.isEmpty()) {
+            qDebug() << "Warning: No user logged in, score will not be saved";
+        } else {
+            // 如果有用户登录，使用新的 submitScore 函数
+            if (currentDifficultyText.isEmpty()) {
+                // 如果没有设置难度文字，使用默认值
+                currentDifficultyText = "Medium"; // 或者根据语言设置
+                qDebug() << "Using default difficulty: Medium";
+            }
+
+            if (!currentUsername.isEmpty() && !currentDifficultyText.isEmpty()) {
+                client->submitScore(currentUsername, currentDifficultyText, score);  // 正确：QString
+                qDebug() << "Score submitted - User:" << currentUsername
+                         << " Difficulty:" << currentDifficultyText
+                         << " Score:" << score;
+            }
+        }
+
         sound->stop();
         this->hide();
         showStartPage();
@@ -582,6 +598,7 @@ void GameWidget::playSound(int type){
     effect->setSource(QUrl("qrc:" + src));
     effect->play();
 }
+
 void GameWidget::startGame(){
     boardWidget = new QWidget(this);
 
@@ -762,7 +779,6 @@ QPropertyAnimation* GameWidget::startfallAnimation(Gem *gem, int h){
     animation->setEasingCurve(QEasingCurve::Linear);
     return animation;
 }
-
 
 void GameWidget::act(Gem* gem){
     qDebug() << "act called on gem at (" << gem->x << "," << gem->y
@@ -1669,6 +1685,7 @@ int GameWidget::getSpecialGemType(int x, int y) {
     if (!gems[x][y]) return 0;
     return gems[x][y]->specialType;
 }
+
 bool GameWidget::typesMatch(unsigned int type1, unsigned int type2) {
     // 如果任意一个是空位，不匹配
     if (type1 == 100 || type2 == 100) {
@@ -2323,14 +2340,11 @@ int GameWidget::calculateComboScore(int rawScore, int combo) {
     return static_cast<int>(rawScore * multiplier);
 }
 
-void GameWidget::setUserInfo(QString username, int difficulty) {
+void GameWidget::setUserInfo(QString username, const QString &difficultyText) {
     this->currentUsername = username;
+    this->currentDifficultyText = difficultyText;
 
-    // 限制难度范围，防止出错
-    if (difficulty < 4) difficulty = 4;
-    if (difficulty > 7) difficulty = 7;
-
-    this->DIFFICULITY = difficulty;
-
-    qDebug() << "Game Settings Updated - User:" << username << " Difficulty:" << this->DIFFICULITY;
+    qDebug() << "Game Settings - User:" << username
+             << " Difficulty:" << difficultyText
+             << " Gem Types:" << this->DIFFICULITY;
 }

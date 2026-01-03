@@ -76,7 +76,7 @@ void dataBase::createTables() {
         "CREATE TABLE IF NOT EXISTS players ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "username VARCHAR(50) NOT NULL, "
-        "difficulty INT NOT NULL DEFAULT 1, "
+        "difficulty VARCHAR(10) NOT NULL DEFAULT 'Medium', "
         "score INT NOT NULL, "
         "play_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
         "FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE"
@@ -210,7 +210,7 @@ int dataBase::loginFunc(QString tempId, QString tempPwd) {
         b.username = tempId;
         b.score = 0;
         b.rank = 0;
-        b.difficulty = 1;
+        b.difficulty = "Medium";
         b.play_time = QDateTime::currentDateTime();
         setPlayer(b);
     }
@@ -291,7 +291,7 @@ void dataBase::inquire() {
         while(sql_query.next())
         {
             QString username = sql_query.value(1).toString();
-            int difficulty = sql_query.value(2).toInt();
+            QString difficulty = sql_query.value(2).toString();
             int score = sql_query.value(3).toInt();
             QDateTime play_time = sql_query.value(4).toDateTime();
 
@@ -310,30 +310,38 @@ void dataBase::inquire() {
 }
 
 bool dataBase::compare(player a, player b) {
-    // 先按分数降序，再按难度降序
+    // 先按分数降序
     if(a.score != b.score) {
         return a.score > b.score;
     }
-    return a.difficulty > b.difficulty;
+    // 如果分数相同，按难度降序
+    // 需要将文字难度转换为权重
+    int weightA = getDifficultyWeight(a.difficulty);
+    int weightB = getDifficultyWeight(b.difficulty);
+    return weightA > weightB;
 }
 
-void dataBase::update(QString username, int difficulty, int score) {
+int dataBase::getDifficultyWeight(const QString &difficulty) {
+    if(difficulty == "Hard") return 3;
+    if(difficulty == "Medium") return 2;
+    if(difficulty == "Easy") return 1;
+    return 0;  // 默认
+}
+
+void dataBase::update(QString username, QString difficultyText, int score) {
     QSqlQuery sql_query;
 
     QString insert_sql = "INSERT INTO players (username, difficulty, score) VALUES (?, ?, ?)";
     sql_query.prepare(insert_sql);
     sql_query.addBindValue(username);
-    sql_query.addBindValue(difficulty);
+    sql_query.addBindValue(difficultyText);  // 直接存储文字
     sql_query.addBindValue(score);
 
-    if(!sql_query.exec())
-    {
+    if(!sql_query.exec()) {
         qDebug() << "Insert score error:" << sql_query.lastError();
-    }
-    else
-    {
+    } else {
         qDebug() << "Score inserted - User:" << username
-                 << "Difficulty:" << difficulty
+                 << "Difficulty:" << difficultyText
                  << "Score:" << score;
     }
 
@@ -341,45 +349,19 @@ void dataBase::update(QString username, int difficulty, int score) {
     this->inquire();
 }
 
-void dataBase::update(QString username, int score) {
-    // 保持向后兼容，使用默认难度1
-    update(username, 1, score);
-}
-
 QString dataBase::showRankList() {
-    users.clear();
-    players.clear();
-    this->inquire();
-
-    sort(players.begin(), players.end(), compare);
-
-    QString s = "Rank\tUsername\tScore\tDifficulty\tTime\n";
-    s += "---------------------------------------------------\n";
-
-    int i = 1;
-    for (auto& player : players) {
-        player.rank = i;
-        s += QString("%1\t%2\t%3\t%4\t%5\n")
-                 .arg(i)
-                 .arg(player.username)
-                 .arg(player.score)
-                 .arg(player.difficulty)
-                 .arg(player.play_time.toString("MM-dd hh:mm"));
-        i++;
-        if(i > 20) break; // 只显示前20名
-    }
-
-    return s;
+    // 默认显示所有难度
+    return showRankListWithDifficulty("All");
 }
 
-QString dataBase::showRankListWithDifficulty(int difficulty) {
+QString dataBase::showRankListWithDifficulty(const QString &difficulty) {
     users.clear();
     players.clear();
     this->inquire();
 
-    // 根据难度筛选
     vector<player> filteredPlayers;
-    if(difficulty == 0) {
+
+    if (difficulty == "All" || difficulty == "All Difficulties") {
         filteredPlayers = players;
     } else {
         for(auto& p : players) {
@@ -389,68 +371,114 @@ QString dataBase::showRankListWithDifficulty(int difficulty) {
         }
     }
 
-    // 按分数降序排序
     sort(filteredPlayers.begin(), filteredPlayers.end(), compare);
 
     QString s;
-    if(difficulty == 0) {
-        s = "=== All Difficulties Ranking ===\n";
+    if (difficulty == "All" || difficulty == "All Difficulties") {
+        s = "=============== All Difficulties Ranking ===============\n\n";
     } else {
-        s = QString("=== Difficulty %1 Ranking ===\n").arg(difficulty);
+        s = QString("=============== %1 Ranking ===============\n\n").arg(difficulty.toUpper());
     }
 
-    s += "Rank\tUsername\tScore\tTime\n";
-    s += "------------------------------------\n";
+    // 修改这里：根据是否是"All"决定是否显示难度列
+    if (difficulty == "All" || difficulty == "All Difficulties") {
+        s += "Rank\tUsername\tScore\tDifficulty\tDate\n";
+        s += "-------------------------------------------------------------\n";  // 增加分隔线长度
+    } else {
+        s += "Rank\tUsername\tScore\tDate\n";
+        s += "--------------------------------------------\n";
+    }
 
     int rank = 1;
     for(auto& p : filteredPlayers) {
-        s += QString("%1\t%2\t%3\t%4\n")
-        .arg(rank)
-            .arg(p.username)
-            .arg(p.score)
-            .arg(p.play_time.toString("MM-dd hh:mm"));
+        if (difficulty == "All" || difficulty == "All Difficulties") {
+            s += QString("%1\t%2\t%3\t%4\t\t%5\n")
+            .arg(rank)
+                .arg(p.username)
+                .arg(p.score)
+                .arg(p.difficulty)
+                .arg(p.play_time.toString("yyyy-MM-dd hh:mm"));  // 简化时间格式
+        } else {
+            s += QString("%1\t%2\t%3\t%4\n")
+            .arg(rank)
+                .arg(p.username)
+                .arg(p.score)
+                .arg(p.play_time.toString("yyyy-MM-dd hh:mm"));  // 简化时间格式
+        }
         rank++;
         if(rank > 20) break;
     }
+
+    if (filteredPlayers.empty()) {
+        s += "No records found.\n";
+    }
+
+    s += QString("\nLast updated: %1")
+             .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm"));
 
     return s;
 }
 
 QString dataBase::showUserRankList() {
+    // 默认显示所有难度
+    return showUserRankListWithDifficulty("All");
+}
+
+QString dataBase::showUserRankListWithDifficulty(const QString &difficulty) {
     users.clear();
     players.clear();
     this->inquire();
 
-    QString s = "";
     QString name = usr.username;
-
     vector<player> tempPlayer;
 
-    for(auto& p : players) {
-        if(p.username == name) {
-            tempPlayer.push_back(p);
+    if (difficulty == "All" || difficulty == "All Difficulties") {
+        for(auto& p : players) {
+            if(p.username == name) {
+                tempPlayer.push_back(p);
+            }
+        }
+    } else {
+        for(auto& p : players) {
+            if(p.username == name && p.difficulty == difficulty) {
+                tempPlayer.push_back(p);
+            }
         }
     }
 
     if(tempPlayer.empty()) {
-        s = "No game records found for user: " + name + "\n";
-        return s;
+        QString noRecords;
+        if (difficulty == "All" || difficulty == "All Difficulties") {
+            noRecords = "No game records found for user: " + name + "\n";
+        } else {
+            noRecords = "No game records found for user: " + name + " in " + difficulty + " difficulty\n";
+        }
+        return noRecords;
     }
 
-    s = "=== Your Game Records ===\n";
-    s += "Score\tDifficulty\tTime\n";
-    s += "---------------------------\n";
+    QString s;
+    if (difficulty == "All" || difficulty == "All Difficulties") {
+        s = "========= Your Game Records (All Difficulties) =========\n\n";
+    } else {
+        s = QString("========= Your Game Records (%1) =========\n\n").arg(difficulty);
+    }
 
-    // 按时间倒序排序（最近玩的在前面）
-    sort(tempPlayer.begin(), tempPlayer.end(), [](player a, player b) {
-        return a.play_time > b.play_time;
-    });
+    s += "Score\tDifficulty\tDate\n";
+    s += "--------------------------------------------\n";
+
+    sort(tempPlayer.begin(), tempPlayer.end(), compare);
 
     for(auto& p : tempPlayer) {
-        s += QString("%1\t%2\t%3\n")
-        .arg(p.score)
-            .arg(p.difficulty)
-            .arg(p.play_time.toString("MM-dd hh:mm"));
+        s += QString("%1\t%2\t\t%3\n")  // 修改时间格式
+                 .arg(p.score)
+                 .arg(p.difficulty)
+                 .arg(p.play_time.toString("yyyy-MM-dd hh:mm"));  // 改为单行
+    }
+
+    if (!tempPlayer.empty()) {
+        s += QString("\nBest Score: %1 (%2)")
+        .arg(tempPlayer[0].score)
+            .arg(tempPlayer[0].difficulty);
     }
 
     return s;

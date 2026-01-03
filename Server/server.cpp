@@ -45,7 +45,11 @@ void server::readData() {
         clientSocket->write(content);
     }
     else if (instruction[0] == "PROFILE"){
-        auto list = database->showUserRankList();
+        QString difficulty = instruction[1];
+        qDebug() << "Processing profile request, difficulty:" << difficulty;
+
+        QString list = database->showUserRankListWithDifficulty(difficulty);
+
         QByteArray content;
         content.append("PRO_RESULT");
         content.append('&');
@@ -54,7 +58,11 @@ void server::readData() {
         clientSocket->write(content);
     }
     else if (instruction[0] == "RANKLIST"){
-        auto list = database->showRankList();
+        QString difficulty = instruction[1];
+        qDebug() << "Processing ranklist request, difficulty:" << difficulty;
+
+        QString list = database->showRankListWithDifficulty(difficulty);
+
         QByteArray content;
         content.append("RAN_RESULT");
         content.append('&');
@@ -63,31 +71,27 @@ void server::readData() {
         clientSocket->write(content);
     }
     else if (instruction[0] == "UPDATE"){
-        // 保持向后兼容，使用默认难度1
-        database->update(instruction[1], 1, instruction[2].toInt());
+        QString difficultyText = instruction[2];  // 直接取文字
+        database->update(instruction[1], difficultyText, instruction[3].toInt());
         QByteArray content;
         content.append("UPD_RESULT");
         clientSocket->write(content);
         qDebug() << "Updated score for user:" << instruction[1];
     }
-    else if (instruction[0] == "SUBMIT_SCORE"){  // 新增：处理分数提交
+    else if (instruction[0] == "SUBMIT_SCORE") {
         QString username = instruction[1];
-        int difficulty = instruction[2].toInt();
+        QString difficultyText = instruction[2];  // "简单"、"普通"、"困难"
         int score = instruction[3].toInt();
 
-        qDebug() << "Received score submission:"
-                 << "User:" << username
-                 << "Difficulty:" << difficulty
+        qDebug() << "Received score - User:" << username
+                 << "Difficulty:" << difficultyText
                  << "Score:" << score;
 
-        // 调用更新函数，传入难度参数
-        database->update(username, difficulty, score);
+        database->update(username, difficultyText, score);
 
         QByteArray content;
         content.append("SCORE_SUBMITTED");
         clientSocket->write(content);
-
-        qDebug() << "Score saved to database for user:" << username;
     }
     else {
         qDebug() << "Unknown instruction:" << instruction[0];

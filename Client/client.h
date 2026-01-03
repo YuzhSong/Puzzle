@@ -10,9 +10,9 @@ public:
     Client();
     bool registerNewUser(QString userName, QString password);
     bool verifyUser(QString userName, QString password);
-    void getProfile();
-    void getRankList();
-    void submitScore(QString username, int difficulty, int score);  // 新增：提交分数
+    void getProfile(const QString &difficulty = "");
+    void getRankList(const QString &difficulty = "");
+    void submitScore(QString username, const QString &difficultyText, int score);  // 新增：提交分数
     void update(int score);  // 保持向后兼容
 
     QString ranklist;

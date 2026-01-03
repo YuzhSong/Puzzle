@@ -68,6 +68,10 @@ private:
     // 新增：界面状态控制
     void initLoginUI();     // 显示初始登录界面
     void enterMainMenu();   // 进入主菜单（执行动画）
+
+    QString currentUsername;
+    QString currentDifficultyText;
+    int currentGemCount;
 };
 
 #endif // STARTPAGE_H

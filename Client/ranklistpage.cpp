@@ -101,75 +101,65 @@ void rankListPage::onQueryButtonClicked()
     else if (ui->hardRadio->isChecked())
         difficulty = "Hard";
     else
-        difficulty = "All Difficulties";
+        difficulty = "All";
 
     qDebug() << "选择的难度:" << difficulty;
 
     // 显示加载中
     ui->ranklist->setText(QString("Loading %1 rankings...\n\n加载%2排行榜中...")
                               .arg(difficulty)
-                              .arg(difficulty == "All Difficulties" ? "所有难度" : difficulty));
+                              .arg(difficulty == "All" ? "所有难度" : difficulty));
     ui->userRanklist->setText("Loading personal records...\n\n加载个人记录中...");
 
     // 强制更新显示
     QCoreApplication::processEvents();
 
-    // 检查客户端是否存在
     if (!client) {
-        qDebug() << "客户端未初始化，显示示例数据";
-
-        // 显示示例数据 - 修复字符串连接
-        QString header = QString("=== %1 Ranking ===\n\n").arg(difficulty.toUpper());
-        QString exampleData = header +
-                              "Rank  Player            Score  Time\n" +
-                              "------------------------------------\n" +
-                              "1.    Player_Alpha      9500  02:15\n" +
-                              "2.    Player_Beta       8900  02:30\n" +
-                              "3.    Player_Gamma      8500  02:45\n" +
-                              "4.    Player_Delta      8200  03:00\n" +
-                              "5.    Player_Epsilon    7900  03:10\n\n" +
-                              "Last updated: " + QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
-
-        ui->ranklist->setText(exampleData);
-
-        // 个人记录示例 - 修复字符串连接
-        QString personalData = QString("=== Your Records ===\n\n") +
-                               "Rank  Score    Difficulty  Date\n" +
-                               "--------------------------------\n" +
-                               "3rd   8500     Medium      " + QDateTime::currentDateTime().toString("MM-dd") + "\n" +
-                               "7th   7200     Hard        " + QDateTime::currentDateTime().addDays(-1).toString("MM-dd") + "\n" +
-                               "12th  6800     Easy        " + QDateTime::currentDateTime().addDays(-2).toString("MM-dd") + "\n\n" +
-                               "Best Score: 8500 (Medium)";
-
-        ui->userRanklist->setText(personalData);
+        qDebug() << "客户端未初始化";
         return;
     }
 
-    qDebug() << "客户端存在，发送查询请求";
+    qDebug() << "发送查询请求";
 
-    // 发送查询请求
-    client->getProfile();
-    client->getRankList();
+    // 先获取排行榜
+    client->getRankList(difficulty);
 
-    // 等待响应
-    QTime dieTime = QTime::currentTime().addMSecs(2000);
+    // 等待并处理
+    QTime dieTime = QTime::currentTime().addMSecs(1000);
     while (QTime::currentTime() < dieTime) {
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
     }
 
-    qDebug() << "查询完成，处理结果";
+    qDebug() << "检查排行榜数据，长度:" << client->ranklist.length();
 
     if (!client->ranklist.isEmpty()) {
-        qDebug() << "排行榜数据不为空，长度:" << client->ranklist.length();
-
-        QString header = QString("=== %1 Ranking ===\n\n").arg(difficulty.toUpper());
-        ui->ranklist->setText(header + client->ranklist);
-        ui->userRanklist->setText("=== Your Game Records ===\n\n" + client->userlist);
+        qDebug() << "设置排行榜数据";
+        ui->ranklist->setText(client->ranklist);
     } else {
         qDebug() << "排行榜数据为空";
-        ui->ranklist->setText("Failed to load rankings. Please try again.\n\n加载失败，请重试。");
-        ui->userRanklist->setText("Failed to load personal records.\n\n加载个人记录失败。");
+        ui->ranklist->setText("No data received for ranklist\n未接收到排行榜数据");
     }
+
+    // 再获取个人记录
+    client->getProfile(difficulty);
+
+    // 再次等待
+    dieTime = QTime::currentTime().addMSecs(1000);
+    while (QTime::currentTime() < dieTime) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
+
+    qDebug() << "检查个人记录数据，长度:" << client->userlist.length();
+
+    if (!client->userlist.isEmpty()) {
+        qDebug() << "设置个人记录数据";
+        ui->userRanklist->setText(client->userlist);
+    } else {
+        qDebug() << "个人记录数据为空";
+        ui->userRanklist->setText("No data received for profile\n未接收到个人记录数据");
+    }
+
+    qDebug() << "查询完成";
 }
 
 void rankListPage::showEvent(QShowEvent *event)
