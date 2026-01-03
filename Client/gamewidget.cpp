@@ -2084,10 +2084,42 @@ void GameWidget::eliminateBoard() {
 void GameWidget::makeSpin(int SX,int SY){
     if(!gems[SX][SY]||SX==-1)
         return;
+
+    // 获取基础颜色索引（剥离 SPECIAL_MASK）
+    int idx = getBaseType(gems[SX][SY]->type);
+    if (idx == 100) { // 空位或非法，直接返回
+        return;
+    }
+
+    // 先清理已有的动画对象，避免重复创建/内存泄漏
+    if (gems[SX][SY]->spinGif) {
+        gems[SX][SY]->spinGif->stop();
+        delete gems[SX][SY]->spinGif;
+        gems[SX][SY]->spinGif = nullptr;
+    }
+    if (gems[SX][SY]->spinLabel) {
+        delete gems[SX][SY]->spinLabel;
+        gems[SX][SY]->spinLabel = nullptr;
+    }
+
     gems[SX][SY]->setStyleSheet(QString("QPushButton{background-color:transparent;border:0px;}"));
+
     gems[SX][SY]->spinLabel = new QLabel(gems[SX][SY]);
     gems[SX][SY]->spinLabel->setGeometry(0,0,gems[SX][SY]->width(), gems[SX][SY]->height());
-    gems[SX][SY]->spinGif = new QMovie(gems[SX][SY]->path_dynamic[gems[SX][SY]->type], QByteArray(), gems[SX][SY]);
+
+    QString gifPath = gems[SX][SY]->path_dynamic[idx];
+    gems[SX][SY]->spinGif = new QMovie(gifPath, QByteArray(), gems[SX][SY]);
+    if (!gems[SX][SY]->spinGif->isValid()) {
+        qWarning() << "makeSpin: Failed to load gif:" << gifPath << "at(" << SX << "," << SY << ")";
+        // 清理并回退到静态显示
+        delete gems[SX][SY]->spinGif;
+        gems[SX][SY]->spinGif = nullptr;
+        delete gems[SX][SY]->spinLabel;
+        gems[SX][SY]->spinLabel = nullptr;
+        gems[SX][SY]->setStyleSheet(QString("QPushButton{border-image:url(%1);}").arg(gems[SX][SY]->path_stable[idx]));
+        return;
+    }
+
     gems[SX][SY]->spinGif->setScaledSize(QSize(gems[SX][SY]->width(), gems[SX][SY]->height()));
     gems[SX][SY]->spinLabel->setMovie(gems[SX][SY]->spinGif);
     gems[SX][SY]->spinLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -2095,15 +2127,27 @@ void GameWidget::makeSpin(int SX,int SY){
     gems[SX][SY]->spinGif->start();
 }
 
+
+
 void GameWidget::makeStopSpin(int SX,int SY){
     if(!gems[SX][SY]||SX==-1)
         return;
-    if(gems[SX][SY]->spinGif)
-        gems[SX][SY]->spinGif->stop();
-    if(gems[SX][SY]->spinLabel)
-        gems[SX][SY]->spinLabel->clear();
 
-    gems[SX][SY]->setStyleSheet(QString("QPushButton{border-image:url(%1);}").arg(gems[SX][SY]->path_stable[gems[SX][SY]->type]));
+    // 停止并删除当前动画对象
+    if(gems[SX][SY]->spinGif) {
+        gems[SX][SY]->spinGif->stop();
+        delete gems[SX][SY]->spinGif;
+        gems[SX][SY]->spinGif = nullptr;
+    }
+    if(gems[SX][SY]->spinLabel) {
+        delete gems[SX][SY]->spinLabel;
+        gems[SX][SY]->spinLabel = nullptr;
+    }
+
+    // 使用基础类型来恢复静态图（处理 SPECIAL_MASK）
+    int idx = getBaseType(gems[SX][SY]->type);
+    if (idx == 100) idx = 1; // 容错（如果是空位则用一个默认）
+    gems[SX][SY]->setStyleSheet(QString("QPushButton{border-image:url(%1);}").arg(gems[SX][SY]->path_stable[idx]));
     gems[SX][SY]->setIconSize(QSize(LEN, LEN));
 }
 
