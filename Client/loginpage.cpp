@@ -31,6 +31,7 @@ loginPage::loginPage(QWidget *parent) :
 
   pwdText->setEchoMode(QLineEdit::Password);
 
+
   QFont ft;
   ft.setPointSize(25);
   id->setFont(ft);
@@ -40,11 +41,11 @@ loginPage::loginPage(QWidget *parent) :
 
 
   QPalette pl = idText->palette();
-  pl.setBrush(QPalette::Base,QBrush(QColor(255,0,0,0)));
+  pl.setBrush(QPalette::Base,QBrush(QColor(255, 255, 255, 255)));
   idText->setPalette(pl);
 
   QPalette pl1 = pwdText->palette();
-  pl1.setBrush(QPalette::Base,QBrush(QColor(255,0,0,0)));
+  pl1.setBrush(QPalette::Base,QBrush(QColor(255, 255, 255, 255)));
   pwdText->setPalette(pl1);
 
 
@@ -52,6 +53,11 @@ loginPage::loginPage(QWidget *parent) :
   pwd->setGeometry(this->width()/2+400,this->height()/2+400,250,100);
   idText->setGeometry(this->width()/2+800,this->height()/2+265,400,75);
   pwdText->setGeometry(this->width()/2+800,this->height()/2+415,400,75);
+
+  idText->setStyleSheet("color: black; background-color: white;");
+  pwdText->setStyleSheet("color: black; background-color: white;");
+  id->setStyleSheet("color: white;");
+  pwd->setStyleSheet("color: white;");
 
   //  ranklist = new QTextBrowser(this);
   //  ranklist->setText("");
