@@ -413,7 +413,7 @@ void GameWidget::setupScene(int i){
                 forbidAll(true);
                 pauseBKLbl = new QLabel(boardWidget);
                 pauseBKLbl->setGeometry(0,0,952, 952);
-                pauseBKgif = new QMovie("://picture/starsBK.gif",QByteArray(),boardWidget);
+                pauseBKgif = new QMovie("://picture/pause.jpg",QByteArray(),boardWidget);
                 pauseBKgif->setScaledSize(QSize(952,952));
                 pauseBKLbl->setMovie(pauseBKgif);
                 pauseBKLbl->show();
@@ -421,7 +421,7 @@ void GameWidget::setupScene(int i){
 
                 pauseTXLbl = new QLabel(boardWidget);
                 pauseTXLbl->setGeometry(250,boardWidget->height()/2,440,30);
-                pauseTXLbl->setText("The Game Has Been Paused.");
+                pauseTXLbl->setText("");
                 pauseTXLbl->setAlignment(Qt::AlignCenter);
                 pauseTXLbl->setFont(QFont("BoDoni MT",25, QFont::Normal));
                 pauseTXLbl->setStyleSheet("QLabel{color:white;}");

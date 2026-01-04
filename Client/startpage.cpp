@@ -114,7 +114,7 @@ StartPage::StartPage(QWidget *parent) :
     // 按钮文字更新 (保留原逻辑)
     connect(&settingP,&settingpage::selectLan,[=](int index){
         if(index==0){
-            startButton->showContent("开始",40);
+            startButton->showContent("",40);
             recordButton->showContent("记录",20);
             settingButton->showContent("设置",20);
             loginButton->showContent("登录",10); // 注意：这里可能需要根据当前状态决定是否刷新显示
@@ -122,7 +122,7 @@ StartPage::StartPage(QWidget *parent) :
             logoutButton->showContent("登出",10);
         }
         if(index==1){
-            startButton->showContent("Start",40);
+            startButton->showContent("",40);
             recordButton->showContent("Record",20);
             settingButton->showContent("Settings",20);
             loginButton->showContent("login",10);
@@ -364,7 +364,7 @@ void StartPage::closeEvent(QCloseEvent *event)
 
 void StartPage::SetButton(){
     startButton->setCircle(this->width()/10, this->width()/2, this->height()/2+100, this->width(), this->height(),\
-                           ":/picture/button/ball.png", "", this);
+                           ":/picture/button/startbutton.png", "", this);
 
     recordButton->setCircle(this->width()/100*5, this->width()/6, this->height()/2+100, this->width(), this->height(),\
                             ":/picture/button/ball.png", "", this);
