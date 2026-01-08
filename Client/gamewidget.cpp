@@ -570,33 +570,7 @@ int GameWidget::randomGem(){
 }
 
 void GameWidget::playSound(int type){
-    QString src=":/music/effect/effect";
-    switch(type){
-    case 0:
-        return;
-    case 1:
-        src.append("1.wav");
-        break;
-    case 2:
-        src.append("2.wav");
-        break;
 
-    case 3:
-        src.append("3.wav");
-        break;
-
-    case 4:
-        src.append("4.wav");
-        break;
-    default:
-        src.append("5.wav");
-        break;
-    }
-    if(effect)
-        delete effect;
-    effect = new QSoundEffect(this);
-    effect->setSource(QUrl("qrc:" + src));
-    effect->play();
 }
 
 void GameWidget::startGame(){
@@ -862,12 +836,6 @@ void GameWidget::act(Gem* gem){
             int currentScore = updateBombList();
 
             if(currentScore == 0) {
-                // 没有形成消除，交换回来
-                if(effect) delete effect;
-                effect = new QSoundEffect(this);
-                effect->setSource(QUrl("qrc:/music/effect/bad.wav"));
-                effect->play();
-
                 // 先交换回来
                 std::swap(gemX, SX);
                 std::swap(gemY, SY);

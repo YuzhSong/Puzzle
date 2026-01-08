@@ -67,7 +67,7 @@ settingpage::settingpage(QWidget *parent) :
 
     // 可以添加提示标签
     QLabel *crossPlatformLabel = new QLabel(this);
-    crossPlatformLabel->setText("音量亮度调节（仅Windows可用）");
+    crossPlatformLabel->setText("");
     crossPlatformLabel->setGeometry(150, 140, 400, 40);
     crossPlatformLabel->setAlignment(Qt::AlignCenter);
     crossPlatformLabel->setStyleSheet("QLabel{color:#888888; font-size:14px;}");
@@ -86,13 +86,13 @@ void settingpage::paintEvent(QPaintEvent *)
 //打开文档
 void settingpage::on_Help_clicked()
 {
-    QFile file(":/doc/Exp.doc");
+    QFile file(":/doc/Exp.docx");
     QTemporaryDir tempDir;
     tempDir.setAutoRemove(false);
     if (tempDir.isValid()) {
-        QString tempFile = tempDir.path() + "/Exp.doc";
-        if (QFile::copy(":/doc/Exp.doc", tempFile)) {
-            QDesktopServices::openUrl(QUrl::fromLocalFile(tempDir.path() + "/Exp.doc"));
+        QString tempFile = tempDir.path() + "/Exp.docx";
+        if (QFile::copy(":/doc/Exp.docx", tempFile)) {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(tempDir.path() + "/Exp.docx"));
         }
     }
 }
@@ -101,7 +101,7 @@ void settingpage::on_Help_clicked()
 //打开网页
 void settingpage::on_Web_clicked()
 {
-    QDesktopServices::openUrl(QUrl(QLatin1String("https://gitee.com/guyi2020/bejeweled-2021")));
+    QDesktopServices::openUrl(QUrl(QLatin1String("https://github.com/YuzhSong/Puzzle")));
 }
 
 //关闭设置界面

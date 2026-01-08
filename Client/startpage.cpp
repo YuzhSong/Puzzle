@@ -117,16 +117,12 @@ StartPage::StartPage(QWidget *parent) :
             startButton->showContent("",40);
             recordButton->showContent("记录",20);
             settingButton->showContent("设置",20);
-            loginButton->showContent("登录",10); // 注意：这里可能需要根据当前状态决定是否刷新显示
-            registerButton->showContent("注册",10);
             logoutButton->showContent("登出",10);
         }
         if(index==1){
             startButton->showContent("",40);
             recordButton->showContent("Record",20);
             settingButton->showContent("Settings",20);
-            loginButton->showContent("login",10);
-            registerButton->showContent("register",10);
             logoutButton->showContent("logout",10);
         }
     });
@@ -260,7 +256,7 @@ void StartPage::enterMainMenu() {
     // 设置主菜单按钮的初始位置（用于动画）
     SetButton(); // 重置为原来的位置逻辑
 
-    startButton->showContent("Start",40);
+    startButton->showContent("",40);
     recordButton->showContent("Record",20);
     settingButton->showContent("Setting",20);
     logoutButton->showContent("Logout", 10);
